@@ -17,7 +17,8 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "production"
     
     # Database
-    DATABASE_URL: str = "mongodb://localhost:27017"
+    MONGODB_URL: str = "mongodb://localhost:27017"
+    DATABASE_URL: str = "mongodb://localhost:27017"  # Fallback
     DB_NAME: str = "cricket_auction"
     
     # JWT - Strict expiration for maximum security
