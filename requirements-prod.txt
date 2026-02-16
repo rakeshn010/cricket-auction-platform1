@@ -1,0 +1,30 @@
+# Production Requirements
+# Install with: pip install -r requirements-prod.txt
+
+# Core (from requirements.txt)
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# Database
+pymongo==4.6.0
+motor==3.3.2
+
+# Authentication & Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.1.1
+
+# WebSocket
+websockets==12.0
+
+# Additional Production Dependencies
+redis==5.0.1  # Session storage and caching
+aioredis==2.0.1  # Async Redis client
+sentry-sdk[fastapi]==1.39.1  # Error tracking
+prometheus-fastapi-instrumentator==6.1.0  # Metrics
+python-json-logger==2.0.7  # Structured logging
+gunicorn==21.2.0  # Production WSGI server
+psutil==5.9.6  # System monitoring
