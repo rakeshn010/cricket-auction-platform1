@@ -210,8 +210,7 @@ async def mark_player_unsold(
 @router.post("/bid")
 async def place_bid(
     bid: BidRequest,
-    current_user: Dict = Depends(get_current_user),
-    request: Request = None
+    current_user: Dict = Depends(get_current_user)
 ):
     """Place a bid on the current player with rate limiting."""
     # Import rate limiter
