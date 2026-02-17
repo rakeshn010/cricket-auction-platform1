@@ -49,6 +49,15 @@ async function refreshAccessToken() {
 }
 
 async function api(url, options = {}) {
+    // Always construct absolute HTTPS URLs for production
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        // Relative URL - construct absolute HTTPS URL
+        url = `https://${window.location.host}${url}`;
+    } else if (url.startsWith('http://')) {
+        // Force HTTPS
+        url = url.replace('http://', 'https://');
+    }
+    
     const currentToken = localStorage.getItem('access_token');
     options.headers = {
         ...options.headers,
@@ -622,7 +631,8 @@ function updateStatistics() {
 
 // WebSocket connection
 function connectWebSocket() {
-    const wsUrl = `ws://${window.location.host}/auction/ws`;
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/auction/ws`;
     ws = new WebSocket(wsUrl);
     
     ws.onopen = () => {
