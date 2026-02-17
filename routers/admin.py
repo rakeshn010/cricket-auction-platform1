@@ -878,3 +878,127 @@ async def get_last_sold_info(current_user: dict = Depends(require_admin)):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting last sold info: {str(e)}")
+
+
+@router.post("/auction/reset")
+async def reset_auction(current_user: dict = Depends(require_admin)):
+    """
+    Reset the entire auction to start fresh.
+    - Resets all players to 'available' status
+    - Clears all bid history
+    - Resets team budgets and rosters
+    - Preserves player and team data
+    """
+    try:
+        # Get original team budgets before reset
+        teams = list(db.teams.find({}))
+        original_budgets = {str(team["_id"]): team.get("original_budget", team.get("budget", 100000)) for team in teams}
+        
+        # Reset all players to available status
+        player_reset_result = db.players.update_many(
+            {},
+            {
+                "$set": {
+                    "status": "available",
+                    "is_live": False,
+                    "final_bid": None,
+                    "final_team": None,
+                    "live_start_time": None,
+                    "live_end_time": None
+                }
+            }
+        )
+        
+        # Clear all bid history
+        bid_delete_result = db.bid_history.delete_many({})
+        
+        # Reset all teams
+        team_reset_count = 0
+        for team in teams:
+            team_id = team["_id"]
+            original_budget = original_budgets.get(str(team_id), 100000)
+            
+            db.teams.update_one(
+                {"_id": team_id},
+                {
+                    "$set": {
+                        "budget": original_budget,
+                        "total_spent": 0,
+                        "remaining_budget": original_budget,
+                        "players_count": 0
+                    }
+                }
+            )
+            team_reset_count += 1
+        
+        # Clear auction config
+        db.config.update_one(
+            {"key": "auction"},
+            {
+                "$set": {
+                    "current_player_id": None,
+                    "current_player_name": None,
+                    "auction_round": 1
+                }
+            },
+            upsert=True
+        )
+        
+        # Log the reset action
+        db.activity_logs.insert_one({
+            "type": "auction_reset",
+            "admin_id": current_user.get("user_id"),
+            "admin_email": current_user.get("email"),
+            "players_reset": player_reset_result.modified_count,
+            "bids_cleared": bid_delete_result.deleted_count,
+            "teams_reset": team_reset_count,
+            "timestamp": datetime.now(timezone.utc)
+        })
+        
+        # Broadcast reset event
+        await manager.broadcast({
+            "type": "auction_reset",
+            "data": {
+                "message": "Auction has been reset by admin",
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+        })
+        
+        return {
+            "ok": True,
+            "message": "Auction reset successfully",
+            "details": {
+                "players_reset": player_reset_result.modified_count,
+                "bids_cleared": bid_delete_result.deleted_count,
+                "teams_reset": team_reset_count
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error resetting auction: {str(e)}")
+
+
+@router.get("/auction/reset-preview")
+async def get_reset_preview(current_user: dict = Depends(require_admin)):
+    """Get preview of what will be reset."""
+    try:
+        sold_count = db.players.count_documents({"status": "sold"})
+        unsold_count = db.players.count_documents({"status": "unsold"})
+        in_auction_count = db.players.count_documents({"status": "in_auction"})
+        total_bids = db.bid_history.count_documents({})
+        teams_count = db.teams.count_documents({})
+        
+        return {
+            "ok": True,
+            "preview": {
+                "players_to_reset": sold_count + unsold_count + in_auction_count,
+                "sold_players": sold_count,
+                "unsold_players": unsold_count,
+                "in_auction_players": in_auction_count,
+                "bids_to_clear": total_bids,
+                "teams_to_reset": teams_count
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting reset preview: {str(e)}")

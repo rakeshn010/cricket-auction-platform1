@@ -1877,3 +1877,168 @@ async function undoLastSold() {
 
 // Expose function globally
 window.undoLastSold = undoLastSold;
+
+
+/* ============================================================
+    RESET AUCTION FEATURE
+    Version: 8.0.0
+============================================================ */
+async function resetAuction() {
+    try {
+        // Get preview of what will be reset
+        const previewRes = await api('/admin/auction/reset-preview');
+        const previewData = await previewRes.json();
+        
+        if (!previewData.ok) {
+            alert('Failed to get reset preview');
+            return;
+        }
+        
+        const preview = previewData.preview;
+        
+        // Confirm with admin - show detailed preview
+        const confirmMsg = `⚠️ RESET ENTIRE AUCTION ⚠️\n\n` +
+            `This will reset EVERYTHING:\n\n` +
+            `📊 Players:\n` +
+            `  • ${preview.sold_players} sold players → available\n` +
+            `  • ${preview.unsold_players} unsold players → available\n` +
+            `  • ${preview.in_auction_players} in-auction players → available\n` +
+            `  • Total: ${preview.players_to_reset} players reset\n\n` +
+            `💰 Teams:\n` +
+            `  • ${preview.teams_to_reset} teams reset to original budgets\n` +
+            `  • All rosters cleared\n\n` +
+            `📝 Data:\n` +
+            `  • ${preview.bids_to_clear} bids will be deleted\n` +
+            `  • Auction round reset to 1\n\n` +
+            `⚠️ THIS CANNOT BE UNDONE!\n\n` +
+            `Type "RESET" to confirm:`;
+        
+        const userInput = prompt(confirmMsg);
+        
+        if (userInput !== 'RESET') {
+            alert('Reset cancelled');
+            return;
+        }
+        
+        // Show loading indicator
+        const resetBtn = document.getElementById('btn-reset-auction');
+        if (resetBtn) {
+            resetBtn.disabled = true;
+            resetBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resetting...';
+        }
+        
+        // Perform reset
+        const resetRes = await api('/admin/auction/reset', {
+            method: 'POST'
+        });
+        
+        const resetData = await resetRes.json();
+        
+        if (resetData.ok) {
+            alert(`✅ Auction Reset Complete!\n\n` +
+                `Players reset: ${resetData.details.players_reset}\n` +
+                `Bids cleared: ${resetData.details.bids_cleared}\n` +
+                `Teams reset: ${resetData.details.teams_reset}\n\n` +
+                `The auction is now ready to start fresh!`);
+            
+            // Reload all data
+            loadAuctionStatus();
+            loadPlayersAdmin();
+            if (typeof loadTeams === 'function') {
+                loadTeams();
+            }
+            loadLiveMonitor();
+            loadAnalytics();
+            loadCurrentLivePlayer();
+        } else {
+            alert(`❌ Reset failed: ${resetData.detail || 'Unknown error'}`);
+        }
+        
+    } catch (error) {
+        console.error('Error resetting auction:', error);
+        alert('❌ Error resetting auction. Please try again.');
+    } finally {
+        // Re-enable button
+        const resetBtn = document.getElementById('btn-reset-auction');
+        if (resetBtn) {
+            resetBtn.disabled = false;
+            resetBtn.innerHTML = '<i class="fas fa-redo"></i> Reset Entire Auction';
+        }
+    }
+}
+
+// Expose function globally
+window.resetAuction = resetAuction;
+
+
+/* ============================================================
+    NOTIFICATION SYSTEM
+    Version: 8.0.0
+============================================================ */
+let notificationPermission = 'default';
+
+// Request notification permission
+async function requestNotificationPermission() {
+    if (!('Notification' in window)) {
+        console.log('Browser does not support notifications');
+        return false;
+    }
+    
+    if (Notification.permission === 'granted') {
+        notificationPermission = 'granted';
+        return true;
+    }
+    
+    if (Notification.permission !== 'denied') {
+        const permission = await Notification.requestPermission();
+        notificationPermission = permission;
+        return permission === 'granted';
+    }
+    
+    return false;
+}
+
+// Show browser notification
+function showNotification(title, options = {}) {
+    if (notificationPermission !== 'granted') {
+        console.log('Notification permission not granted');
+        return;
+    }
+    
+    const defaultOptions = {
+        icon: '/static/logo.png',
+        badge: '/static/badge.png',
+        vibrate: [200, 100, 200],
+        requireInteraction: false,
+        ...options
+    };
+    
+    try {
+        const notification = new Notification(title, defaultOptions);
+        
+        // Auto-close after 5 seconds
+        setTimeout(() => notification.close(), 5000);
+        
+        // Handle click
+        notification.onclick = function(event) {
+            event.preventDefault();
+            window.focus();
+            notification.close();
+        };
+    } catch (error) {
+        console.error('Error showing notification:', error);
+    }
+}
+
+// Initialize notifications on page load
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(() => {
+            requestNotificationPermission();
+        }, 2000);
+    });
+} else {
+    setTimeout(() => {
+        requestNotificationPermission();
+    }, 2000);
+}

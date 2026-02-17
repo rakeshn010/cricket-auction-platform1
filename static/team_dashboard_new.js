@@ -277,6 +277,23 @@ function displayLivePlayer(player) {
                     ${!canBid || isOwnPlayer ? 'disabled' : ''}
                 >
             </div>
+            
+            <!-- Quick Bid Presets for Mobile -->
+            <div class="quick-bid-presets">
+                <button class="quick-bid-btn" onclick="setQuickBid(${currentBid + 100})" ${!canBid || isOwnPlayer ? 'disabled' : ''}>
+                    +100
+                </button>
+                <button class="quick-bid-btn" onclick="setQuickBid(${currentBid + 500})" ${!canBid || isOwnPlayer ? 'disabled' : ''}>
+                    +500
+                </button>
+                <button class="quick-bid-btn" onclick="setQuickBid(${currentBid + 1000})" ${!canBid || isOwnPlayer ? 'disabled' : ''}>
+                    +1K
+                </button>
+                <button class="quick-bid-btn" onclick="setQuickBid(${currentBid + 5000})" ${!canBid || isOwnPlayer ? 'disabled' : ''}>
+                    +5K
+                </button>
+            </div>
+            
             <button 
                 type="button"
                 class="bid-button" 
@@ -662,6 +679,15 @@ function connectWebSocket() {
                 // Show notification if outbid
                 if (data.data && data.data.team_id !== teamId && data.data.previous_team_id === teamId) {
                     showToast('Outbid!', `You have been outbid on ${data.data.player_name}`, 'warning');
+                    
+                    // Browser notification if enabled
+                    if (notificationPreferences.outbid && teamNotificationPermission === 'granted') {
+                        showTeamNotification('🔔 Outbid!', {
+                            body: `You have been outbid on ${data.data.player_name}`,
+                            tag: 'outbid',
+                            vibrate: [200, 100, 200, 100, 200]
+                        });
+                    }
                 }
                 break;
                 
@@ -672,6 +698,15 @@ function connectWebSocket() {
                 
                 if (data.data && data.data.team_id === teamId) {
                     showToast('Player Acquired!', `You won ${data.data.player_name} for ₹${data.data.final_bid.toLocaleString()}`, 'success');
+                    
+                    // Browser notification if enabled
+                    if (notificationPreferences.playerSold && teamNotificationPermission === 'granted') {
+                        showTeamNotification('🎉 Player Acquired!', {
+                            body: `You won ${data.data.player_name} for ₹${data.data.final_bid.toLocaleString()}`,
+                            tag: 'player-sold',
+                            vibrate: [300, 100, 300]
+                        });
+                    }
                 }
                 break;
                 
@@ -681,6 +716,15 @@ function connectWebSocket() {
                 
             case 'player_live':
                 await loadAuctionStatus();
+                
+                // Browser notification if enabled
+                if (data.data && notificationPreferences.playerLive && teamNotificationPermission === 'granted') {
+                    showTeamNotification('🔴 New Player Live', {
+                        body: `${data.data.player_name} is now live for bidding`,
+                        tag: 'player-live',
+                        vibrate: [200]
+                    });
+                }
                 break;
                 
             case 'player_undo':
@@ -692,6 +736,15 @@ function connectWebSocket() {
                 if (data.data && data.data.team_id === teamId) {
                     showToast('Sale Undone', `${data.data.player_name} removed from your roster. ₹${data.data.refund_amount.toLocaleString()} refunded.`, 'warning');
                 }
+                break;
+                
+            case 'auction_reset':
+                // Handle auction reset
+                await loadTeamData();
+                await loadMyPlayers();
+                await loadAllPlayers();
+                await loadAuctionStatus();
+                showToast('Auction Reset', 'The auction has been reset by admin', 'warning');
                 break;
                 
             case 'auction_status':
@@ -885,3 +938,212 @@ function playTeamCountdownBeep(seconds) {
         console.log('Audio not supported');
     }
 }
+
+
+/* ============================================================
+    NOTIFICATION SYSTEM FOR TEAMS
+    Version: 3.5.0
+============================================================ */
+let teamNotificationPermission = 'default';
+let notificationPreferences = {
+    outbid: true,
+    playerSold: true,
+    budgetWarning: true,
+    playerLive: false
+};
+
+// Load notification preferences from localStorage
+function loadNotificationPreferences() {
+    const saved = localStorage.getItem('notification_preferences');
+    if (saved) {
+        try {
+            notificationPreferences = JSON.parse(saved);
+        } catch (e) {
+            console.error('Error loading notification preferences:', e);
+        }
+    }
+}
+
+// Save notification preferences
+function saveNotificationPreferences() {
+    localStorage.setItem('notification_preferences', JSON.stringify(notificationPreferences));
+}
+
+// Request notification permission
+async function requestTeamNotificationPermission() {
+    if (!('Notification' in window)) {
+        console.log('Browser does not support notifications');
+        return false;
+    }
+    
+    if (Notification.permission === 'granted') {
+        teamNotificationPermission = 'granted';
+        return true;
+    }
+    
+    if (Notification.permission !== 'denied') {
+        const permission = await Notification.requestPermission();
+        teamNotificationPermission = permission;
+        return permission === 'granted';
+    }
+    
+    return false;
+}
+
+// Show team notification
+function showTeamNotification(title, options = {}) {
+    if (teamNotificationPermission !== 'granted') {
+        console.log('Notification permission not granted');
+        return;
+    }
+    
+    const defaultOptions = {
+        icon: '/static/logo.png',
+        badge: '/static/badge.png',
+        vibrate: [200, 100, 200],
+        requireInteraction: false,
+        ...options
+    };
+    
+    try {
+        const notification = new Notification(title, defaultOptions);
+        
+        // Auto-close after 6 seconds
+        setTimeout(() => notification.close(), 6000);
+        
+        // Handle click - focus window
+        notification.onclick = function(event) {
+            event.preventDefault();
+            window.focus();
+            notification.close();
+        };
+        
+        return notification;
+    } catch (error) {
+        console.error('Error showing notification:', error);
+        return null;
+    }
+}
+
+// Show notification settings modal
+function showNotificationSettings() {
+    const modal = document.createElement('div');
+    modal.className = 'notification-settings-modal';
+    modal.innerHTML = `
+        <div class="notification-settings-content">
+            <h3>🔔 Notification Settings</h3>
+            <p class="text-muted">Choose which notifications you want to receive</p>
+            
+            <div class="notification-option">
+                <label>
+                    <input type="checkbox" id="notif-outbid" ${notificationPreferences.outbid ? 'checked' : ''}>
+                    <span>Outbid Alerts</span>
+                    <small>When another team outbids you</small>
+                </label>
+            </div>
+            
+            <div class="notification-option">
+                <label>
+                    <input type="checkbox" id="notif-player-sold" ${notificationPreferences.playerSold ? 'checked' : ''}>
+                    <span>Player Acquired</span>
+                    <small>When you successfully acquire a player</small>
+                </label>
+            </div>
+            
+            <div class="notification-option">
+                <label>
+                    <input type="checkbox" id="notif-budget-warning" ${notificationPreferences.budgetWarning ? 'checked' : ''}>
+                    <span>Budget Warnings</span>
+                    <small>When your budget is running low</small>
+                </label>
+            </div>
+            
+            <div class="notification-option">
+                <label>
+                    <input type="checkbox" id="notif-player-live" ${notificationPreferences.playerLive ? 'checked' : ''}>
+                    <span>New Player Live</span>
+                    <small>When a new player goes live for bidding</small>
+                </label>
+            </div>
+            
+            <div class="notification-settings-actions">
+                <button class="btn btn-primary" onclick="saveNotificationSettings()">Save Settings</button>
+                <button class="btn btn-secondary" onclick="closeNotificationSettings()">Cancel</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Close on background click
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeNotificationSettings();
+        }
+    });
+}
+
+// Save notification settings
+function saveNotificationSettings() {
+    notificationPreferences.outbid = document.getElementById('notif-outbid').checked;
+    notificationPreferences.playerSold = document.getElementById('notif-player-sold').checked;
+    notificationPreferences.budgetWarning = document.getElementById('notif-budget-warning').checked;
+    notificationPreferences.playerLive = document.getElementById('notif-player-live').checked;
+    
+    saveNotificationPreferences();
+    closeNotificationSettings();
+    showToast('Settings Saved', 'Notification preferences updated', 'success');
+}
+
+// Close notification settings
+function closeNotificationSettings() {
+    const modal = document.querySelector('.notification-settings-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Expose functions globally
+window.showNotificationSettings = showNotificationSettings;
+window.saveNotificationSettings = saveNotificationSettings;
+window.closeNotificationSettings = closeNotificationSettings;
+
+// Initialize notifications
+loadNotificationPreferences();
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(() => {
+            requestTeamNotificationPermission();
+        }, 3000);
+    });
+} else {
+    setTimeout(() => {
+        requestTeamNotificationPermission();
+    }, 3000);
+}
+
+
+/* ============================================================
+    QUICK BID PRESETS FOR MOBILE
+    Version: 3.5.0
+============================================================ */
+function setQuickBid(amount) {
+    const bidInput = document.getElementById('bid-amount');
+    if (bidInput) {
+        bidInput.value = amount;
+        
+        // Add haptic feedback animation
+        bidInput.classList.add('haptic-feedback');
+        setTimeout(() => {
+            bidInput.classList.remove('haptic-feedback');
+        }, 200);
+        
+        // Vibrate if supported
+        if ('vibrate' in navigator) {
+            navigator.vibrate(50);
+        }
+    }
+}
+
+// Expose function globally
+window.setQuickBid = setQuickBid;
