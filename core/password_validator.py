@@ -9,11 +9,11 @@ from fastapi import HTTPException, status
 class PasswordValidator:
     """Validate password strength according to security best practices."""
     
-    MIN_LENGTH = 12
+    MIN_LENGTH = 8  # Reduced from 12 to 8
     REQUIRE_UPPERCASE = True
     REQUIRE_LOWERCASE = True
     REQUIRE_DIGIT = True
-    REQUIRE_SPECIAL = True
+    REQUIRE_SPECIAL = False  # Made optional instead of required
     SPECIAL_CHARS = "!@#$%^&*()_+-=[]{}|;:,.<>?"
     
     @staticmethod
