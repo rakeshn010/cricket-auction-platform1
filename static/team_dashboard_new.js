@@ -797,8 +797,8 @@ function updateTeamAuctionTimer(seconds) {
         const secs = seconds % 60;
         timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
         
-        // Update progress - always use 30 as max for consistency
-        const percentage = (seconds / 30) * 100;
+        // Update progress - use 30 as max
+        const percentage = Math.min(100, (seconds / 30) * 100);
         progressBar.style.width = percentage + '%';
         
         // Color changes

@@ -579,20 +579,27 @@ function updateLiveTimer(seconds) {
         return;
     }
     
-    // Update display
-    textEl.textContent = seconds;
-    
-    // Update progress circle - always use 30 as max for consistency
-    const offset = circumference - (seconds / 30) * circumference;
-    circleEl.style.strokeDashoffset = offset;
-    
-    // Change color based on time remaining
-    if (seconds <= 5) {
-        circleEl.style.stroke = 'var(--accent-red)';
-    } else if (seconds <= 10) {
-        circleEl.style.stroke = '#f59e0b';
+    if (seconds > 0) {
+        // Update display
+        textEl.textContent = seconds;
+        
+        // Update progress circle - use 30 as max
+        const percentage = Math.min(100, (seconds / 30) * 100);
+        const offset = circumference - (percentage / 100) * circumference;
+        circleEl.style.strokeDashoffset = offset;
+        
+        // Change color based on time remaining
+        if (seconds <= 5) {
+            circleEl.style.stroke = 'var(--accent-red)';
+        } else if (seconds <= 10) {
+            circleEl.style.stroke = '#f59e0b';
+        } else {
+            circleEl.style.stroke = 'var(--accent-cyan)';
+        }
     } else {
-        circleEl.style.stroke = 'var(--accent-cyan)';
+        // Timer expired - hide or show 0
+        textEl.textContent = '0';
+        circleEl.style.strokeDashoffset = circumference;
     }
     
     // Stop local countdown timer since we're using server timer
