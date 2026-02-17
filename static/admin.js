@@ -57,8 +57,12 @@ async function refreshAccessToken() {
 
 async function api(url, options = {}) {
     // Ensure URL uses HTTPS in production
-    if (url.startsWith('/') && window.location.protocol === 'https:') {
+    if (url.startsWith('http://')) {
+        url = url.replace('http://', 'https://');
+        console.log('Converted HTTP to HTTPS:', url);
+    } else if (url.startsWith('/') && window.location.protocol === 'https:') {
         url = `https://${window.location.host}${url}`;
+        console.log('Constructed HTTPS URL:', url);
     }
     
     const token = getAccess();
