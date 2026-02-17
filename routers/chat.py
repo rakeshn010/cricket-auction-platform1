@@ -2,7 +2,7 @@
 Chat and messaging router.
 Handles team chat, private messages, and group discussions.
 """
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Form
 from typing import List, Optional
 from bson import ObjectId
 from datetime import datetime, timezone
@@ -16,8 +16,8 @@ router = APIRouter(prefix="/chat", tags=["Chat"])
 
 @router.post("/send")
 async def send_message(
-    message: str,
-    room: str = "global",
+    message: str = Form(...),
+    room: str = Form("global"),
     current_user: dict = Depends(get_current_user)
 ):
     """Send a chat message."""
