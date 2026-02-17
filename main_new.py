@@ -123,7 +123,8 @@ app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     description="Production-ready Cricket Auction Platform with real-time bidding and enhanced security",
-    lifespan=lifespan
+    lifespan=lifespan,
+    redirect_slashes=False  # Disable automatic slash redirects to prevent HTTP redirects
 )
 
 
