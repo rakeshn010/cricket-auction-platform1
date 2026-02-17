@@ -45,6 +45,11 @@ class Settings(BaseSettings):
     MAX_UPLOAD_SIZE: int = 5242880  # 5MB
     UPLOAD_DIR: str = "./uploads"
     
+    # Cloudinary (Image Storage)
+    CLOUDINARY_CLOUD_NAME: str = "your_cloud_name"
+    CLOUDINARY_API_KEY: str = "your_api_key"
+    CLOUDINARY_API_SECRET: str = "your_api_secret"
+    
     # Logging
     LOG_LEVEL: str = "INFO"
     LOG_FILE: str = "logs/app.log"
