@@ -767,6 +767,19 @@ function connectAdminWebSocket() {
                 loadAnalytics();
                 loadPlayersAdmin();
                 break;
+            case 'player_undo':
+                // Handle undo event
+                loadPlayersAdmin();
+                if (typeof loadTeams === 'function') {
+                    loadTeams();
+                }
+                loadLiveMonitor();
+                loadAnalytics();
+                // Show notification
+                if (data.data) {
+                    alert(`🔄 UNDO: ${data.data.player_name} restored to auction. ₹${data.data.refund_amount.toLocaleString()} refunded to ${data.data.team_name}`);
+                }
+                break;
             case 'auction_status':
                 loadAuctionStatus();
                 break;
@@ -1802,3 +1815,65 @@ async function exportPlayerRoster() {
         alert('Failed to export player roster');
     }
 }
+
+
+/* ============================================================
+    UNDO LAST SOLD PLAYER
+============================================================ */
+async function undoLastSold() {
+    try {
+        // First, get info about the last sold player
+        const infoRes = await api('/admin/auction/last-sold-info');
+        const infoData = await infoRes.json();
+        
+        if (!infoData.ok || !infoData.player) {
+            alert('No sold players found to undo');
+            return;
+        }
+        
+        const player = infoData.player;
+        
+        // Confirm with admin
+        const confirmMsg = `Are you sure you want to UNDO this sale?\n\n` +
+            `Player: ${player.name}\n` +
+            `Team: ${player.team_name}\n` +
+            `Amount: ₹${player.final_bid.toLocaleString()}\n\n` +
+            `This will:\n` +
+            `✓ Restore ${player.name} to auction\n` +
+            `✓ Refund ₹${player.final_bid.toLocaleString()} to ${player.team_name}\n` +
+            `✓ Remove player from team's roster\n\n` +
+            `This action will be logged.`;
+        
+        if (!confirm(confirmMsg)) {
+            return;
+        }
+        
+        // Perform undo
+        const undoRes = await api('/admin/auction/undo-last-sold', {
+            method: 'POST'
+        });
+        
+        const undoData = await undoRes.json();
+        
+        if (undoData.ok) {
+            alert(`✅ ${undoData.message}`);
+            
+            // Reload relevant data
+            loadPlayersAdmin();
+            if (typeof loadTeams === 'function') {
+                loadTeams();
+            }
+            loadLiveMonitor();
+            loadAnalytics();
+        } else {
+            alert(`❌ Failed to undo: ${undoData.detail || 'Unknown error'}`);
+        }
+        
+    } catch (error) {
+        console.error('Error undoing last sold:', error);
+        alert('❌ Error undoing last sold player. Please try again.');
+    }
+}
+
+// Expose function globally
+window.undoLastSold = undoLastSold;

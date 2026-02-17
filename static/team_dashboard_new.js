@@ -683,6 +683,17 @@ function connectWebSocket() {
                 await loadAuctionStatus();
                 break;
                 
+            case 'player_undo':
+                // Handle undo event - refresh team data and players
+                await loadTeamData();
+                await loadMyPlayers();
+                await loadAuctionStatus();
+                
+                if (data.data && data.data.team_id === teamId) {
+                    showToast('Sale Undone', `${data.data.player_name} removed from your roster. ₹${data.data.refund_amount.toLocaleString()} refunded.`, 'warning');
+                }
+                break;
+                
             case 'auction_status':
                 await loadAuctionStatus();
                 break;

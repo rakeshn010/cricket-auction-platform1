@@ -739,3 +739,142 @@ async def get_eligible_players(current_user: dict = Depends(require_admin)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+
+@router.post("/auction/undo-last-sold")
+async def undo_last_sold(current_user: dict = Depends(require_admin)):
+    """
+    Undo the last SOLD player action.
+    Restores player to available status and refunds team's money.
+    """
+    try:
+        # Find the most recently sold player
+        last_sold = db.players.find_one(
+            {"status": "sold"},
+            sort=[("live_end_time", -1)]
+        )
+        
+        if not last_sold:
+            raise HTTPException(status_code=404, detail="No sold players found to undo")
+        
+        player_id = last_sold["_id"]
+        player_name = last_sold.get("name", "Unknown")
+        final_bid = last_sold.get("final_bid", 0)
+        team_id = last_sold.get("final_team")
+        
+        if not team_id:
+            raise HTTPException(status_code=400, detail="Player has no team assigned")
+        
+        # Get team info before undo
+        team = db.teams.find_one({"_id": ObjectId(team_id)})
+        if not team:
+            raise HTTPException(status_code=404, detail="Team not found")
+        
+        team_name = team.get("name", "Unknown")
+        
+        # Restore player to available status
+        db.players.update_one(
+            {"_id": player_id},
+            {
+                "$set": {
+                    "status": "available",
+                    "is_live": False,
+                    "final_bid": None,
+                    "final_team": None,
+                    "live_end_time": None
+                }
+            }
+        )
+        
+        # Refund team's money
+        db.teams.update_one(
+            {"_id": ObjectId(team_id)},
+            {
+                "$inc": {
+                    "budget": final_bid,
+                    "total_spent": -final_bid,
+                    "players_count": -1
+                }
+            }
+        )
+        
+        # Mark all bids for this player as not winning
+        db.bid_history.update_many(
+            {"player_id": str(player_id)},
+            {"$set": {"is_winning": False}}
+        )
+        
+        # Log the undo action
+        db.activity_logs.insert_one({
+            "type": "undo_sold",
+            "player_id": str(player_id),
+            "player_name": player_name,
+            "team_id": team_id,
+            "team_name": team_name,
+            "refund_amount": final_bid,
+            "admin_id": current_user.get("user_id"),
+            "admin_email": current_user.get("email"),
+            "timestamp": datetime.now(timezone.utc)
+        })
+        
+        # Broadcast undo event
+        await manager.broadcast({
+            "type": "player_undo",
+            "data": {
+                "player_id": str(player_id),
+                "player_name": player_name,
+                "team_id": team_id,
+                "team_name": team_name,
+                "refund_amount": final_bid
+            }
+        })
+        
+        return {
+            "ok": True,
+            "message": f"Successfully undone: {player_name} restored to auction, ₹{final_bid:,} refunded to {team_name}",
+            "player_id": str(player_id),
+            "player_name": player_name,
+            "team_name": team_name,
+            "refund_amount": final_bid
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error undoing last sold: {str(e)}")
+
+
+@router.get("/auction/last-sold-info")
+async def get_last_sold_info(current_user: dict = Depends(require_admin)):
+    """Get information about the last sold player for undo confirmation."""
+    try:
+        last_sold = db.players.find_one(
+            {"status": "sold"},
+            sort=[("live_end_time", -1)]
+        )
+        
+        if not last_sold:
+            return {
+                "ok": False,
+                "message": "No sold players found"
+            }
+        
+        team_name = "Unknown"
+        if last_sold.get("final_team"):
+            team = db.teams.find_one({"_id": ObjectId(last_sold.get("final_team"))})
+            if team:
+                team_name = team.get("name", "Unknown")
+        
+        return {
+            "ok": True,
+            "player": {
+                "id": str(last_sold["_id"]),
+                "name": last_sold.get("name"),
+                "final_bid": last_sold.get("final_bid", 0),
+                "team_name": team_name,
+                "sold_time": last_sold.get("live_end_time").isoformat() if last_sold.get("live_end_time") else None
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting last sold info: {str(e)}")
