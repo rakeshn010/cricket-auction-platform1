@@ -91,11 +91,11 @@ async function init() {
     connectWebSocket();
     initCharts();
     
-    // Auto-refresh every 5 seconds
+    // Auto-refresh every 3 seconds (reduced from 5)
     setInterval(async () => {
         await loadTeamData();
         await loadAuctionStatus();
-    }, 5000);
+    }, 3000);
 }
 
 // Load team data

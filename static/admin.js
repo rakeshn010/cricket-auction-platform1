@@ -830,8 +830,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Auto-refresh live monitor every 30 seconds
-setInterval(loadLiveMonitor, 30000);
+// Auto-refresh live monitor every 5 seconds (reduced from 30)
+setInterval(loadLiveMonitor, 5000);
 
 
 /* ============================================================
