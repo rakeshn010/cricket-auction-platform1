@@ -176,6 +176,23 @@ if settings.ENABLE_RESPONSE_COMPRESSION:
     logger.info("Response compression enabled")
 
 
+# Add cache control middleware for static files
+@app.middleware("http")
+async def add_cache_control_headers(request: Request, call_next):
+    """Add cache control headers to prevent aggressive caching of JS/CSS files."""
+    response = await call_next(request)
+    
+    # For JavaScript and CSS files, use short cache with revalidation
+    if request.url.path.startswith("/static/") and (
+        request.url.path.endswith(".js") or 
+        request.url.path.endswith(".css")
+    ):
+        response.headers["Cache-Control"] = "public, max-age=300, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+    
+    return response
+
+
 # Static files and templates
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
