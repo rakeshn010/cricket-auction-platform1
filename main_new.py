@@ -263,6 +263,12 @@ app.include_router(admin.router)
 app.include_router(reports.router)
 app.include_router(viewer.router)
 
+# Include new feature routers
+from routers import chat, wishlist, comparison
+app.include_router(chat.router)
+app.include_router(wishlist.router)
+app.include_router(comparison.router)
+
 # Include monitoring router
 from core.monitoring import router as monitoring_router
 app.include_router(monitoring_router)
