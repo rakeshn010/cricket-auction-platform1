@@ -17,39 +17,87 @@ router = APIRouter(prefix="/admin", tags=["Admin"])
 
 @router.get("/dashboard/stats")
 async def get_dashboard_stats(current_user: dict = Depends(require_admin)):
-    """Get dashboard statistics for admin."""
+    """Get dashboard statistics for admin - optimized with aggregation."""
     # Get current auction round
     config = db.config.find_one({"key": "auction"}) or {}
     current_round = config.get("auction_round", 1)
     
-    total_players = db.players.count_documents({})
-    sold_players = db.players.count_documents({"status": "sold"})
-    unsold_players = db.players.count_documents({"status": "unsold"})
-    available_players = db.players.count_documents({"status": "available"})
-    in_auction_players = db.players.count_documents({"status": "in_auction"})
+    # Use aggregation pipeline for efficient stats calculation
+    pipeline = [
+        {
+            "$facet": {
+                "status_stats": [
+                    {"$group": {
+                        "_id": "$status",
+                        "count": {"$sum": 1}
+                    }}
+                ],
+                "round_stats": [
+                    {"$match": {"auction_round": current_round}},
+                    {"$group": {
+                        "_id": "$status",
+                        "count": {"$sum": 1}
+                    }}
+                ],
+                "role_stats": [
+                    {"$group": {
+                        "_id": {"role": "$role", "status": "$status"},
+                        "count": {"$sum": 1}
+                    }}
+                ],
+                "revenue": [
+                    {"$match": {"status": "sold"}},
+                    {"$group": {
+                        "_id": None,
+                        "total": {"$sum": "$final_bid"}
+                    }}
+                ],
+                "total_count": [
+                    {"$count": "count"}
+                ]
+            }
+        }
+    ]
     
-    # Current round stats
-    current_round_players = db.players.count_documents({"auction_round": current_round})
-    current_round_sold = db.players.count_documents({"auction_round": current_round, "status": "sold"})
-    current_round_unsold = db.players.count_documents({"auction_round": current_round, "status": "unsold"})
+    result = list(db.players.aggregate(pipeline))[0]
     
-    total_teams = db.teams.count_documents({})
+    # Parse status stats
+    status_counts = {item["_id"]: item["count"] for item in result["status_stats"]}
+    total_players = result["total_count"][0]["count"] if result["total_count"] else 0
+    sold_players = status_counts.get("sold", 0)
+    unsold_players = status_counts.get("unsold", 0)
+    available_players = status_counts.get("available", 0)
+    in_auction_players = status_counts.get("in_auction", 0)
     
-    # Calculate total revenue
-    sold_players_list = list(db.players.find({"status": "sold"}))
-    total_revenue = sum(p.get("final_bid", 0) for p in sold_players_list)
+    # Parse round stats
+    round_counts = {item["_id"]: item["count"] for item in result["round_stats"]}
+    current_round_sold = round_counts.get("sold", 0)
+    current_round_unsold = round_counts.get("unsold", 0)
+    current_round_available = round_counts.get("available", 0)
+    current_round_players = sum(round_counts.values())
     
-    # Get bid statistics
-    total_bids = db.bid_history.count_documents({})
-    
-    # Role-based stats
+    # Parse role stats
     role_stats = {}
     for role in ["Batsman", "Bowler", "All-Rounder", "Wicketkeeper"]:
-        role_stats[role] = {
-            "total": db.players.count_documents({"role": role}),
-            "sold": db.players.count_documents({"role": role, "status": "sold"}),
-            "unsold": db.players.count_documents({"role": role, "status": "unsold"})
-        }
+        role_stats[role] = {"total": 0, "sold": 0, "unsold": 0}
+    
+    for item in result["role_stats"]:
+        role = item["_id"]["role"]
+        status = item["_id"]["status"]
+        count = item["count"]
+        if role in role_stats:
+            role_stats[role]["total"] += count
+            if status == "sold":
+                role_stats[role]["sold"] = count
+            elif status == "unsold":
+                role_stats[role]["unsold"] = count
+    
+    # Get revenue
+    total_revenue = result["revenue"][0]["total"] if result["revenue"] else 0
+    
+    # Get other counts (these are fast)
+    total_teams = db.teams.count_documents({})
+    total_bids = db.bid_history.count_documents({})
     
     return {
         "total_players": total_players,
@@ -65,7 +113,7 @@ async def get_dashboard_stats(current_user: dict = Depends(require_admin)):
             "total": current_round_players,
             "sold": current_round_sold,
             "unsold": current_round_unsold,
-            "available": current_round_players - current_round_sold - current_round_unsold
+            "available": current_round_available
         },
         "role_stats": role_stats
     }
@@ -101,22 +149,35 @@ async def get_revenue_by_category(current_user: dict = Depends(require_admin)):
 
 @router.get("/dashboard/team_spending")
 async def get_team_spending(current_user: dict = Depends(require_admin)):
-    """Get spending breakdown by team."""
-    teams = list(db.teams.find({}))
+    """Get spending breakdown by team - optimized with aggregation."""
+    # Use aggregation to calculate spending per team
+    pipeline = [
+        {"$match": {"status": "sold", "final_team": {"$exists": True, "$ne": None}}},
+        {
+            "$group": {
+                "_id": "$final_team",
+                "total_spent": {"$sum": "$final_bid"},
+                "players_count": {"$sum": 1}
+            }
+        }
+    ]
+    
+    spending_by_team = {item["_id"]: item for item in db.players.aggregate(pipeline)}
+    
+    # Get all teams
+    teams = list(db.teams.find({}, {"_id": 1, "name": 1, "budget": 1}))
     
     team_data = []
     for team in teams:
         team_id = str(team["_id"])
-        players = list(db.players.find({"final_team": team_id, "status": "sold"}))
-        
-        total_spent = sum(p.get("final_bid", 0) for p in players)
+        spending = spending_by_team.get(team_id, {"total_spent": 0, "players_count": 0})
         
         team_data.append({
             "team_id": team_id,
             "team_name": team.get("name"),
-            "total_spent": total_spent,
+            "total_spent": spending["total_spent"],
             "remaining_budget": team.get("budget", 0),
-            "players_count": len(players)
+            "players_count": spending["players_count"]
         })
     
     return {"teams": team_data}
