@@ -13,6 +13,7 @@ from pathlib import Path
 from database import db
 from core.security import get_current_user, require_admin
 from core.config import settings
+from core.cloudinary_config import upload_image, delete_image, is_cloudinary_configured
 from schemas.player import (
     PlayerCreate,
     PlayerUpdate,
@@ -23,7 +24,7 @@ from schemas.player import (
 
 router = APIRouter(prefix="/players", tags=["Players"])
 
-# Ensure upload directory exists
+# Ensure upload directory exists (fallback for local storage)
 UPLOAD_DIR = Path("static/uploads/players")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -51,7 +52,7 @@ async def upload_player_image(
     file: UploadFile = File(...),
     current_user: dict = Depends(get_current_user)
 ):
-    """Upload player image."""
+    """Upload player image to Cloudinary or local storage."""
     # Validate file type
     allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
     if file.content_type not in allowed_types:
@@ -74,17 +75,28 @@ async def upload_player_image(
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
     
-    # Generate unique filename
-    file_ext = file.filename.split(".")[-1]
-    unique_filename = f"{player_id}_{uuid.uuid4().hex[:8]}.{file_ext}"
-    file_path = UPLOAD_DIR / unique_filename
+    image_url = None
     
-    # Save file
-    with open(file_path, "wb") as f:
-        f.write(contents)
+    # Try Cloudinary first, fallback to local storage
+    if is_cloudinary_configured():
+        # Upload to Cloudinary
+        result = upload_image(contents, file.filename)
+        if result.get("success"):
+            image_url = result.get("url")
+        else:
+            raise HTTPException(status_code=500, detail=f"Cloudinary upload failed: {result.get('error')}")
+    else:
+        # Fallback to local storage
+        file_ext = file.filename.split(".")[-1]
+        unique_filename = f"{player_id}_{uuid.uuid4().hex[:8]}.{file_ext}"
+        file_path = UPLOAD_DIR / unique_filename
+        
+        with open(file_path, "wb") as f:
+            f.write(contents)
+        
+        image_url = f"/static/uploads/players/{unique_filename}"
     
     # Update player with image path
-    image_url = f"/static/uploads/players/{unique_filename}"
     db.players.update_one(
         {"_id": pid},
         {"$set": {"image_path": image_url, "updated_at": datetime.now(timezone.utc)}}
@@ -126,7 +138,7 @@ async def public_player_register(
         )
     
     image_path = None
-    if photo:  # Changed from 'image' to 'photo'
+    if photo:
         # Validate and save image
         allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
         if photo.content_type not in allowed_types:
@@ -136,14 +148,25 @@ async def public_player_register(
         if len(contents) > 5 * 1024 * 1024:
             raise HTTPException(status_code=400, detail="Image too large. Maximum 5MB.")
         
-        file_ext = photo.filename.split(".")[-1]
-        unique_filename = f"player_{uuid.uuid4().hex}.{file_ext}"
-        file_path = UPLOAD_DIR / unique_filename
-        
-        with open(file_path, "wb") as f:
-            f.write(contents)
-        
-        image_path = f"/static/uploads/players/{unique_filename}"
+        # Try Cloudinary first, fallback to local storage
+        if is_cloudinary_configured():
+            # Upload to Cloudinary
+            result = upload_image(contents, photo.filename)
+            if result.get("success"):
+                image_path = result.get("url")
+            else:
+                # Log error but continue without image
+                print(f"Cloudinary upload failed: {result.get('error')}")
+        else:
+            # Fallback to local storage
+            file_ext = photo.filename.split(".")[-1]
+            unique_filename = f"player_{uuid.uuid4().hex}.{file_ext}"
+            file_path = UPLOAD_DIR / unique_filename
+            
+            with open(file_path, "wb") as f:
+                f.write(contents)
+            
+            image_path = f"/static/uploads/players/{unique_filename}"
     
     player_doc = {
         "name": name,
