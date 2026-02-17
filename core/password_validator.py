@@ -78,31 +78,24 @@ class PasswordValidator:
         """Check for common weak patterns."""
         password_lower = password.lower()
         
-        common_patterns = [
-            "password", "123456", "qwerty", "abc123", "letmein",
+        # Only check for very common weak passwords
+        common_passwords = [
+            "password", "123456", "qwerty", "letmein",
             "admin", "welcome", "monkey", "dragon", "master",
-            "111111", "123123", "000000"
+            "111111", "123123", "000000", "password123", "admin123"
         ]
         
-        for pattern in common_patterns:
-            if pattern in password_lower:
+        for pattern in common_passwords:
+            if pattern == password_lower:  # Exact match only
                 return True
-        
-        # Check for sequential numbers
-        if re.search(r"(012|123|234|345|456|567|678|789)", password):
-            return True
-        
-        # Check for sequential letters
-        if re.search(r"(abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz)", password_lower):
-            return True
         
         return False
     
     @staticmethod
-    def _has_repeated_chars(password: str, max_repeats: int = 3) -> bool:
-        """Check for excessive character repetition."""
-        for i in range(len(password) - max_repeats):
-            if password[i] == password[i+1] == password[i+2]:
+    def _has_repeated_chars(password: str, max_repeats: int = 4) -> bool:
+        """Check for excessive character repetition (4+ same chars in a row)."""
+        for i in range(len(password) - max_repeats + 1):
+            if len(set(password[i:i+max_repeats])) == 1:
                 return True
         return False
     
