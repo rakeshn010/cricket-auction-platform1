@@ -1608,7 +1608,6 @@ window.deletePlayer = deletePlayer;
 /* ============================================================
     AUCTION TIMER DISPLAY & SOUND EFFECTS
 ============================================================ */
-let timerMaxSeconds = 30; // Default timer duration
 let lastBeepSecond = -1;
 
 function updateAuctionTimer(seconds) {
@@ -1622,18 +1621,13 @@ function updateAuctionTimer(seconds) {
     if (seconds > 0) {
         timerCard.style.display = 'block';
         
-        // Update max seconds on first update
-        if (seconds > timerMaxSeconds) {
-            timerMaxSeconds = seconds;
-        }
-        
         // Format time as MM:SS
         const minutes = Math.floor(seconds / 60);
         const secs = seconds % 60;
         timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
         
-        // Update progress bar
-        const percentage = (seconds / timerMaxSeconds) * 100;
+        // Update progress bar - always use 30 as max for consistency
+        const percentage = (seconds / 30) * 100;
         progressBar.style.width = percentage + '%';
         
         // Change color based on time remaining
@@ -1662,7 +1656,6 @@ function updateAuctionTimer(seconds) {
     } else {
         // Hide timer when not active
         timerCard.style.display = 'none';
-        timerMaxSeconds = 30;
         lastBeepSecond = -1;
     }
 }

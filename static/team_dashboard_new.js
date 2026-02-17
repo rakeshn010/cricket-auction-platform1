@@ -769,7 +769,6 @@ document.addEventListener('DOMContentLoaded', init);
 
 
 // Auction Timer Display for Team Dashboard
-let teamTimerMaxSeconds = 30;
 let teamLastBeepSecond = -1;
 
 function updateTeamAuctionTimer(seconds) {
@@ -782,17 +781,13 @@ function updateTeamAuctionTimer(seconds) {
     if (seconds > 0) {
         timerCard.style.display = 'block';
         
-        if (seconds > teamTimerMaxSeconds) {
-            teamTimerMaxSeconds = seconds;
-        }
-        
         // Format time
         const minutes = Math.floor(seconds / 60);
         const secs = seconds % 60;
         timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
         
-        // Update progress
-        const percentage = (seconds / teamTimerMaxSeconds) * 100;
+        // Update progress - always use 30 as max for consistency
+        const percentage = (seconds / 30) * 100;
         progressBar.style.width = percentage + '%';
         
         // Color changes
@@ -827,7 +822,6 @@ function updateTeamAuctionTimer(seconds) {
     } else {
         // Timer expired - disable bidding
         timerCard.style.display = 'none';
-        teamTimerMaxSeconds = 30;
         teamLastBeepSecond = -1;
         
         // Disable bid button when timer expires
