@@ -17,7 +17,7 @@ const state = {
 
 // Configuration
 const CONFIG = {
-    WS_URL: `ws://${window.location.host}/auction/ws`,
+    WS_URL: `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/auction/ws`,
     POLL_INTERVAL: 3000, // Reduced from 5000 to 3000ms (3 seconds)
     MAX_EVENTS: 30,
     ANIMATION_DURATION: 500

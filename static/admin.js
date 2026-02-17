@@ -56,6 +56,11 @@ async function refreshAccessToken() {
 }
 
 async function api(url, options = {}) {
+    // Ensure URL uses HTTPS in production
+    if (url.startsWith('/') && window.location.protocol === 'https:') {
+        url = `https://${window.location.host}${url}`;
+    }
+    
     const token = getAccess();
     options.headers = Object.assign(
         {},
@@ -727,7 +732,8 @@ async function endCurrentLivePlayer() {
 let adminWs = null;
 
 function connectAdminWebSocket() {
-    const wsUrl = `ws://${window.location.host}/auction/ws`;
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/auction/ws`;
     adminWs = new WebSocket(wsUrl);
     
     adminWs.onopen = () => {
