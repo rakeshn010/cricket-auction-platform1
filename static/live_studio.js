@@ -812,25 +812,58 @@ function playSound(type) {
     
     try {
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
         
         if (type === 'bid') {
+            // Quick beep for bid
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
             oscillator.frequency.value = 900;
             gainNode.gain.value = 0.12;
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.15);
+            
         } else if (type === 'sold') {
-            oscillator.frequency.value = 1400;
-            gainNode.gain.value = 0.18;
+            // Hammer sound effect (three quick hits)
+            [0, 0.1, 0.2].forEach((delay, index) => {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 200 - (index * 20); // Descending pitch
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime + delay);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + delay + 0.08);
+                
+                oscillator.start(audioContext.currentTime + delay);
+                oscillator.stop(audioContext.currentTime + delay + 0.08);
+            });
+            
+            // Victory chime after hammer
+            setTimeout(() => {
+                const chime = audioContext.createOscillator();
+                const chimeGain = audioContext.createGain();
+                chime.connect(chimeGain);
+                chimeGain.connect(audioContext.destination);
+                chime.frequency.value = 1400;
+                chimeGain.gain.value = 0.18;
+                chime.start();
+                chime.stop(audioContext.currentTime + 0.3);
+            }, 300);
+            
         } else if (type === 'unsold') {
-            oscillator.frequency.value = 350;
+            // Descending sad sound
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.frequency.setValueAtTime(500, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(250, audioContext.currentTime + 0.3);
             gainNode.gain.value = 0.12;
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.3);
         }
-        
-        oscillator.start();
-        oscillator.stop(audioContext.currentTime + 0.15);
     } catch (error) {
         console.log('Audio not supported');
     }

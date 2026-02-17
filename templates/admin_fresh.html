@@ -456,6 +456,22 @@
           </div>
         </div>
       </div>
+      
+      <!-- Auction Timer Display -->
+      <div class="row g-3 mt-2">
+        <div class="col-12">
+          <div class="card" id="auction-timer-card" style="display: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
+            <div class="card-body text-center text-white">
+              <h5 class="mb-2">⏱️ Auction Timer</h5>
+              <div style="font-size: 4rem; font-weight: bold; font-family: 'Courier New', monospace; text-shadow: 0 4px 8px rgba(0,0,0,0.3);" id="auction-timer-display">00:00</div>
+              <div class="progress mt-3" style="height: 8px; background: rgba(255,255,255,0.2);">
+                <div class="progress-bar bg-danger" role="progressbar" id="timer-progress-bar" style="width: 100%; transition: width 1s linear;"></div>
+              </div>
+              <small class="mt-2 d-block" style="opacity: 0.9;">Time remaining for current player</small>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -596,7 +612,12 @@
       <div class="card mb-5">
         <div class="card-header d-flex justify-content-between align-items-center">
           <strong>🎮 Players Management</strong>
-          <button onclick="loadPlayersAdmin()" class="btn btn-outline-primary btn-sm">🔄 Reload</button>
+          <div>
+            <button onclick="exportPlayerRoster()" class="btn btn-success btn-sm me-2">
+              <i class="fas fa-download"></i> Export Roster
+            </button>
+            <button onclick="loadPlayersAdmin()" class="btn btn-outline-primary btn-sm">🔄 Reload</button>
+          </div>
         </div>
 
         <div class="card-body">
@@ -900,7 +921,12 @@
       <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
           <strong>💵 Full Bid History</strong>
-          <button onclick="loadBidHistory()" class="btn btn-outline-primary btn-sm">🔄 Refresh</button>
+          <div>
+            <button onclick="exportBidHistory()" class="btn btn-success btn-sm me-2">
+              <i class="fas fa-download"></i> Export CSV
+            </button>
+            <button onclick="loadBidHistory()" class="btn btn-outline-primary btn-sm">🔄 Refresh</button>
+          </div>
         </div>
         <div class="card-body">
           <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">

@@ -775,6 +775,9 @@ function connectAdminWebSocket() {
                     loadTeams();
                 }
                 break;
+            case 'timer_update':
+                updateAuctionTimer(data.data.seconds);
+                break;
         }
     };
     
@@ -1600,3 +1603,198 @@ async function deletePlayer(playerId, playerName) {
 
 // Expose deletePlayer globally
 window.deletePlayer = deletePlayer;
+
+
+/* ============================================================
+    AUCTION TIMER DISPLAY & SOUND EFFECTS
+============================================================ */
+let timerMaxSeconds = 30; // Default timer duration
+let lastBeepSecond = -1;
+
+function updateAuctionTimer(seconds) {
+    const timerCard = document.getElementById('auction-timer-card');
+    const timerDisplay = document.getElementById('auction-timer-display');
+    const progressBar = document.getElementById('timer-progress-bar');
+    
+    if (!timerCard || !timerDisplay || !progressBar) return;
+    
+    // Show timer card when auction is active
+    if (seconds > 0) {
+        timerCard.style.display = 'block';
+        
+        // Update max seconds on first update
+        if (seconds > timerMaxSeconds) {
+            timerMaxSeconds = seconds;
+        }
+        
+        // Format time as MM:SS
+        const minutes = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        
+        // Update progress bar
+        const percentage = (seconds / timerMaxSeconds) * 100;
+        progressBar.style.width = percentage + '%';
+        
+        // Change color based on time remaining
+        if (seconds <= 5) {
+            progressBar.classList.remove('bg-warning', 'bg-success');
+            progressBar.classList.add('bg-danger');
+            timerDisplay.style.color = '#ff4444';
+            timerDisplay.style.animation = 'pulse 0.5s infinite';
+        } else if (seconds <= 10) {
+            progressBar.classList.remove('bg-success', 'bg-danger');
+            progressBar.classList.add('bg-warning');
+            timerDisplay.style.color = '#ffaa00';
+            timerDisplay.style.animation = 'none';
+        } else {
+            progressBar.classList.remove('bg-warning', 'bg-danger');
+            progressBar.classList.add('bg-success');
+            timerDisplay.style.color = '#ffffff';
+            timerDisplay.style.animation = 'none';
+        }
+        
+        // Play countdown beeps
+        if (seconds <= 10 && seconds !== lastBeepSecond) {
+            playCountdownBeep(seconds);
+            lastBeepSecond = seconds;
+        }
+    } else {
+        // Hide timer when not active
+        timerCard.style.display = 'none';
+        timerMaxSeconds = 30;
+        lastBeepSecond = -1;
+    }
+}
+
+function playCountdownBeep(seconds) {
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        // Different frequencies for different countdown stages
+        if (seconds <= 3) {
+            oscillator.frequency.value = 1200; // High pitch for final countdown
+            gainNode.gain.value = 0.3;
+        } else if (seconds <= 5) {
+            oscillator.frequency.value = 900; // Medium-high pitch
+            gainNode.gain.value = 0.2;
+        } else {
+            oscillator.frequency.value = 600; // Lower pitch
+            gainNode.gain.value = 0.15;
+        }
+        
+        oscillator.type = 'sine';
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.1);
+    } catch (error) {
+        console.log('Audio not supported');
+    }
+}
+
+// Add CSS animation for pulse effect
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+`;
+document.head.appendChild(style);
+
+
+/* ============================================================
+    EXPORT FUNCTIONALITY
+============================================================ */
+async function exportBidHistory() {
+    try {
+        const response = await api("/auction/bid_history");
+        const data = await response.json();
+        
+        if (!data.bids || data.bids.length === 0) {
+            alert('No bid history to export');
+            return;
+        }
+        
+        // Create CSV content
+        let csv = 'Timestamp,Player Name,Team Name,Bid Amount,Is Winning\n';
+        
+        data.bids.forEach(bid => {
+            const timestamp = new Date(bid.timestamp).toLocaleString();
+            const playerName = (bid.player_name || 'Unknown').replace(/,/g, ';');
+            const teamName = (bid.team_name || 'Unknown').replace(/,/g, ';');
+            const bidAmount = bid.bid_amount || 0;
+            const isWinning = bid.is_winning ? 'Yes' : 'No';
+            
+            csv += `"${timestamp}","${playerName}","${teamName}",${bidAmount},${isWinning}\n`;
+        });
+        
+        // Create download link
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', `bid_history_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        alert('Bid history exported successfully!');
+    } catch (error) {
+        console.error('Export error:', error);
+        alert('Failed to export bid history');
+    }
+}
+
+async function exportPlayerRoster() {
+    try {
+        const response = await api("/players?include_unapproved=false");
+        const data = await response.json();
+        const players = data.players || data;
+        
+        if (!players || players.length === 0) {
+            alert('No players to export');
+            return;
+        }
+        
+        // Create CSV content
+        let csv = 'Name,Role,Category,Base Price,Status,Final Bid,Team Name\n';
+        
+        players.forEach(player => {
+            const name = (player.name || 'Unknown').replace(/,/g, ';');
+            const role = (player.role || 'N/A').replace(/,/g, ';');
+            const category = (player.category || 'N/A').replace(/,/g, ';');
+            const basePrice = player.base_price || 0;
+            const status = player.status || 'available';
+            const finalBid = player.final_bid || 0;
+            const teamName = (player.team_name || 'N/A').replace(/,/g, ';');
+            
+            csv += `"${name}","${role}","${category}",${basePrice},"${status}",${finalBid},"${teamName}"\n`;
+        });
+        
+        // Create download link
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', `player_roster_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        alert('Player roster exported successfully!');
+    } catch (error) {
+        console.error('Export error:', error);
+        alert('Failed to export player roster');
+    }
+}

@@ -159,8 +159,18 @@ function updateTeamOverview() {
     const progressBar = document.getElementById('purse-progress-bar');
     if (percentage < 20) {
         progressBar.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
+        // Show critical budget alert
+        if (!window.budgetAlertShown20) {
+            showToast('Budget Alert!', `Only ${percentage.toFixed(1)}% of budget remaining (₹${remaining.toLocaleString()})`, 'error');
+            window.budgetAlertShown20 = true;
+        }
     } else if (percentage < 50) {
         progressBar.style.background = 'linear-gradient(90deg, #f59e0b, #d97706)';
+        // Show warning budget alert
+        if (!window.budgetAlertShown50) {
+            showToast('Budget Warning', `${percentage.toFixed(1)}% of budget remaining (₹${remaining.toLocaleString()})`, 'warning');
+            window.budgetAlertShown50 = true;
+        }
     } else {
         progressBar.style.background = 'linear-gradient(90deg, #10b981, #667eea)';
     }
@@ -677,6 +687,10 @@ function connectWebSocket() {
                 await loadAuctionStatus();
                 break;
                 
+            case 'timer_update':
+                updateTeamAuctionTimer(data.data.seconds);
+                break;
+                
             case 'team_update':
                 await loadTeamData();
                 break;
@@ -752,3 +766,89 @@ function logout() {
 
 // Initialize on load
 document.addEventListener('DOMContentLoaded', init);
+
+
+// Auction Timer Display for Team Dashboard
+let teamTimerMaxSeconds = 30;
+let teamLastBeepSecond = -1;
+
+function updateTeamAuctionTimer(seconds) {
+    const timerCard = document.getElementById('team-auction-timer-card');
+    const timerDisplay = document.getElementById('team-auction-timer-display');
+    const progressBar = document.getElementById('team-timer-progress-bar');
+    
+    if (!timerCard || !timerDisplay || !progressBar) return;
+    
+    if (seconds > 0) {
+        timerCard.style.display = 'block';
+        
+        if (seconds > teamTimerMaxSeconds) {
+            teamTimerMaxSeconds = seconds;
+        }
+        
+        // Format time
+        const minutes = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        
+        // Update progress
+        const percentage = (seconds / teamTimerMaxSeconds) * 100;
+        progressBar.style.width = percentage + '%';
+        
+        // Color changes
+        if (seconds <= 5) {
+            progressBar.classList.remove('bg-warning', 'bg-success');
+            progressBar.classList.add('bg-danger');
+            timerDisplay.style.color = '#ff4444';
+            timerDisplay.style.animation = 'pulse 0.5s infinite';
+        } else if (seconds <= 10) {
+            progressBar.classList.remove('bg-success', 'bg-danger');
+            progressBar.classList.add('bg-warning');
+            timerDisplay.style.color = '#ffaa00';
+            timerDisplay.style.animation = 'none';
+        } else {
+            progressBar.classList.remove('bg-warning', 'bg-danger');
+            progressBar.classList.add('bg-success');
+            timerDisplay.style.color = '#ffffff';
+            timerDisplay.style.animation = 'none';
+        }
+        
+        // Play beeps
+        if (seconds <= 10 && seconds !== teamLastBeepSecond) {
+            playTeamCountdownBeep(seconds);
+            teamLastBeepSecond = seconds;
+        }
+    } else {
+        timerCard.style.display = 'none';
+        teamTimerMaxSeconds = 30;
+        teamLastBeepSecond = -1;
+    }
+}
+
+function playTeamCountdownBeep(seconds) {
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        if (seconds <= 3) {
+            oscillator.frequency.value = 1200;
+            gainNode.gain.value = 0.3;
+        } else if (seconds <= 5) {
+            oscillator.frequency.value = 900;
+            gainNode.gain.value = 0.2;
+        } else {
+            oscillator.frequency.value = 600;
+            gainNode.gain.value = 0.15;
+        }
+        
+        oscillator.type = 'sine';
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.1);
+    } catch (error) {
+        console.log('Audio not supported');
+    }
+}
