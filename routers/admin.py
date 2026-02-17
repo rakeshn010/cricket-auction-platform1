@@ -521,6 +521,9 @@ async def set_live_player(
         }
     })
     
+    # Start auction timer (30 seconds)
+    await manager.start_timer(30)
+    
     return {
         "ok": True,
         "message": f"Player '{player.get('name')}' is now live in auction",
@@ -608,6 +611,10 @@ async def end_live_player(
                 "player_name": player.get("name")
             }
         })
+    
+    # Stop auction timer
+    manager.stop_timer()
+    await manager.broadcast_timer(0)
     
     return {
         "ok": True,
