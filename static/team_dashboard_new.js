@@ -1029,50 +1029,52 @@ function showTeamNotification(title, options = {}) {
 function showNotificationSettings() {
     const modal = document.createElement('div');
     modal.className = 'notification-settings-modal';
-    modal.innerHTML = `
-        <div class="notification-settings-content">
-            <h3>🔔 Notification Settings</h3>
-            <p class="text-muted">Choose which notifications you want to receive</p>
-            
-            <div class="notification-option">
-                <label>
-                    <input type="checkbox" id="notif-outbid" ${notificationPreferences.outbid ? 'checked' : ''}>
-                    <span>Outbid Alerts</span>
-                    <small>When another team outbids you</small>
-                </label>
-            </div>
-            
-            <div class="notification-option">
-                <label>
-                    <input type="checkbox" id="notif-player-sold" ${notificationPreferences.playerSold ? 'checked' : ''}>
-                    <span>Player Acquired</span>
-                    <small>When you successfully acquire a player</small>
-                </label>
-            </div>
-            
-            <div class="notification-option">
-                <label>
-                    <input type="checkbox" id="notif-budget-warning" ${notificationPreferences.budgetWarning ? 'checked' : ''}>
-                    <span>Budget Warnings</span>
-                    <small>When your budget is running low</small>
-                </label>
-            </div>
-            
-            <div class="notification-option">
-                <label>
-                    <input type="checkbox" id="notif-player-live" ${notificationPreferences.playerLive ? 'checked' : ''}>
-                    <span>New Player Live</span>
-                    <small>When a new player goes live for bidding</small>
-                </label>
-            </div>
-            
-            <div class="notification-settings-actions">
-                <button class="btn btn-primary" onclick="saveNotificationSettings()">Save Settings</button>
-                <button class="btn btn-secondary" onclick="closeNotificationSettings()">Cancel</button>
-            </div>
-        </div>
-    `;
     
+    const content = document.createElement('div');
+    content.className = 'notification-settings-content';
+    
+    content.innerHTML = 
+        '<h3>🔔 Notification Settings</h3>' +
+        '<p class="text-muted">Choose which notifications you want to receive</p>' +
+        
+        '<div class="notification-option">' +
+            '<label>' +
+                '<input type="checkbox" id="notif-outbid" ' + (notificationPreferences.outbid ? 'checked' : '') + '>' +
+                '<div><span style="font-size:16px;font-weight:600;display:block;margin-bottom:4px;">Outbid Alerts</span>' +
+                '<small style="display:block;color:rgba(255,255,255,0.6);font-size:13px;">When another team outbids you</small></div>' +
+            '</label>' +
+        '</div>' +
+        
+        '<div class="notification-option">' +
+            '<label>' +
+                '<input type="checkbox" id="notif-player-sold" ' + (notificationPreferences.playerSold ? 'checked' : '') + '>' +
+                '<div><span style="font-size:16px;font-weight:600;display:block;margin-bottom:4px;">Player Acquired</span>' +
+                '<small style="display:block;color:rgba(255,255,255,0.6);font-size:13px;">When you successfully acquire a player</small></div>' +
+            '</label>' +
+        '</div>' +
+        
+        '<div class="notification-option">' +
+            '<label>' +
+                '<input type="checkbox" id="notif-budget-warning" ' + (notificationPreferences.budgetWarning ? 'checked' : '') + '>' +
+                '<div><span style="font-size:16px;font-weight:600;display:block;margin-bottom:4px;">Budget Warnings</span>' +
+                '<small style="display:block;color:rgba(255,255,255,0.6);font-size:13px;">When your budget is running low</small></div>' +
+            '</label>' +
+        '</div>' +
+        
+        '<div class="notification-option">' +
+            '<label>' +
+                '<input type="checkbox" id="notif-player-live" ' + (notificationPreferences.playerLive ? 'checked' : '') + '>' +
+                '<div><span style="font-size:16px;font-weight:600;display:block;margin-bottom:4px;">New Player Live</span>' +
+                '<small style="display:block;color:rgba(255,255,255,0.6);font-size:13px;">When a new player goes live for bidding</small></div>' +
+            '</label>' +
+        '</div>' +
+        
+        '<div class="notification-settings-actions">' +
+            '<button class="btn btn-primary" onclick="saveNotificationSettings()">Save Settings</button>' +
+            '<button class="btn btn-secondary" onclick="closeNotificationSettings()">Cancel</button>' +
+        '</div>';
+    
+    modal.appendChild(content);
     document.body.appendChild(modal);
     
     // Close on background click

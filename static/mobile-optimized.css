@@ -298,6 +298,7 @@
         gap: 12px;
         cursor: pointer;
         color: #fff;
+        width: 100%;
     }
     
     .notification-option input[type="checkbox"] {
@@ -308,17 +309,8 @@
         flex-shrink: 0;
     }
     
-    .notification-option span {
-        font-size: 16px;
-        font-weight: 600;
-        display: block;
-        margin-bottom: 4px;
-    }
-    
-    .notification-option small {
-        display: block;
-        color: rgba(255, 255, 255, 0.6);
-        font-size: 13px;
+    .notification-option label > div {
+        flex: 1;
     }
     
     .notification-settings-actions {
