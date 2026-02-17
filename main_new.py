@@ -48,7 +48,11 @@ async def lifespan(app: FastAPI):
     
     # Start session cleanup
     from core.session_manager import session_manager
+    from core.cloudinary_config import is_cloudinary_configured
     import asyncio
+    
+    # Check Cloudinary configuration
+    is_cloudinary_configured()
     
     async def cleanup_sessions():
         while True:
