@@ -747,8 +747,20 @@ function connectWebSocket() {
                 showToast('Auction Reset', 'The auction has been reset by admin', 'warning');
                 break;
                 
+            case 'chat_message':
+                // Handle incoming chat message
+                if (typeof handleChatMessage === 'function') {
+                    handleChatMessage(data.data);
+                }
+                break;
+                
             case 'auction_status':
                 await loadAuctionStatus();
+                
+                // Check if wishlist player went live
+                if (data.data && data.data.current_player_id && typeof handleWishlistPlayerLive === 'function') {
+                    handleWishlistPlayerLive(data.data.current_player_id);
+                }
                 break;
                 
             case 'timer_update':
