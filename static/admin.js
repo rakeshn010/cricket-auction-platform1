@@ -1611,14 +1611,25 @@ window.deletePlayer = deletePlayer;
 let lastBeepSecond = -1;
 
 function updateAuctionTimer(seconds) {
+    console.log('Admin timer update:', seconds);
     const timerCard = document.getElementById('auction-timer-card');
     const timerDisplay = document.getElementById('auction-timer-display');
     const progressBar = document.getElementById('timer-progress-bar');
     
-    if (!timerCard || !timerDisplay || !progressBar) return;
+    console.log('Timer elements:', {
+        timerCard: !!timerCard,
+        timerDisplay: !!timerDisplay,
+        progressBar: !!progressBar
+    });
+    
+    if (!timerCard || !timerDisplay || !progressBar) {
+        console.error('Timer elements not found!');
+        return;
+    }
     
     // Show timer card when auction is active
     if (seconds > 0) {
+        console.log('Showing timer with', seconds, 'seconds');
         timerCard.style.display = 'block';
         
         // Format time as MM:SS

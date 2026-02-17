@@ -772,13 +772,24 @@ document.addEventListener('DOMContentLoaded', init);
 let teamLastBeepSecond = -1;
 
 function updateTeamAuctionTimer(seconds) {
+    console.log('Team timer update:', seconds);
     const timerCard = document.getElementById('team-auction-timer-card');
     const timerDisplay = document.getElementById('team-auction-timer-display');
     const progressBar = document.getElementById('team-timer-progress-bar');
     
-    if (!timerCard || !timerDisplay || !progressBar) return;
+    console.log('Team timer elements:', {
+        timerCard: !!timerCard,
+        timerDisplay: !!timerDisplay,
+        progressBar: !!progressBar
+    });
+    
+    if (!timerCard || !timerDisplay || !progressBar) {
+        console.error('Team timer elements not found!');
+        return;
+    }
     
     if (seconds > 0) {
+        console.log('Showing team timer with', seconds, 'seconds');
         timerCard.style.display = 'block';
         
         // Format time
