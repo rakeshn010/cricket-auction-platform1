@@ -521,7 +521,7 @@ async function loadPendingApprovals() {
             const basePrice = player.base_price ? `₹${player.base_price.toLocaleString()}` : 'Not Set';
             
             html += '<tr>';
-            html += `<td><img src="${imgSrc}" alt="${player.name}" style="width:50px;height:50px;object-fit:cover;border-radius:5px;"></td>`;
+            html += `<td><img src="${imgSrc}" alt="${player.name}" style="width:50px;height:50px;object-fit:cover;border-radius:5px;" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%23ddd%22 width=%22100%22 height=%22100%22/%3E%3Ctext fill=%22%23999%22 font-family=%22Arial%22 font-size=%2240%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3E${player.name.charAt(0).toUpperCase()}%3C/text%3E%3C/svg%3E';"></td>`;
             html += `<td><strong>${player.name}</strong></td>`;
             html += `<td><span class="badge bg-info">${player.role || 'N/A'}</span></td>`;
             html += `<td><span class="badge bg-secondary">${player.category || 'N/A'}</span></td>`;
@@ -1430,8 +1430,8 @@ document.getElementById("btn-view-unsold").addEventListener("click", async () =>
         col.className = "col-md-4 col-lg-3 mb-3";
         
         const imageHtml = p.image_path ? 
-            `<img src="${p.image_path}" class="img-fluid rounded mb-2" style="max-height:150px;object-fit:cover;" alt="${p.name}">` :
-            `<div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center mb-2" style="height:150px;font-size:48px;">${p.name.charAt(0)}</div>`;
+            `<img src="${p.image_path}" class="img-fluid rounded mb-2" style="max-height:150px;object-fit:cover;" alt="${p.name}" onerror="this.onerror=null; this.outerHTML='<div class=\\'bg-secondary text-white rounded d-flex align-items-center justify-content-center mb-2\\' style=\\'height:150px;font-size:48px;\\'>${p.name.charAt(0).toUpperCase()}</div>';">` :
+            `<div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center mb-2" style="height:150px;font-size:48px;">${p.name.charAt(0).toUpperCase()}</div>`;
         
         col.innerHTML = `
             <div class="card h-100">

@@ -208,7 +208,7 @@ function displayLivePlayer(player) {
     // Player image
     let playerImage = '';
     if (player.image_path) {
-        playerImage = `<img src="${player.image_path}" class="player-image" alt="${player.name}">`;
+        playerImage = `<img src="${player.image_path}" class="player-image" alt="${player.name}" onerror="this.onerror=null; this.outerHTML='<div class=\\'player-image-placeholder\\'><i class=\\'bi bi-person-fill\\'></i></div>';">`;
     } else {
         playerImage = '<div class="player-image-placeholder"><i class="bi bi-person-fill"></i></div>';
     }
