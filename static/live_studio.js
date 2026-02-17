@@ -277,6 +277,9 @@ function handleWebSocketMessage(data) {
             showToast('🎬 Auction Started!', 'success');
             loadAllData();
             break;
+        case 'timer_update':
+            updateLiveTimer(data.data.seconds);
+            break;
     }
 }
 
@@ -503,7 +506,8 @@ function displayCurrentPlayer(player, timerSeconds) {
         </div>
     `;
     
-    startCountdown(timerSeconds || 30);
+    // Don't start local countdown - we'll use WebSocket timer updates
+    // The timer will be updated via timer_update WebSocket messages
 }
 
 function displayWaitingState() {
@@ -557,6 +561,41 @@ function startCountdown(seconds) {
 }
 
 function stopCountdown() {
+    if (countdownTimer) {
+        clearInterval(countdownTimer);
+        countdownTimer = null;
+    }
+}
+
+// Synchronized Timer Update from WebSocket
+function updateLiveTimer(seconds) {
+    console.log('Live studio timer update:', seconds);
+    const textEl = document.getElementById('countdownText');
+    const circleEl = document.getElementById('countdownCircle');
+    const circumference = 402;
+    
+    if (!textEl || !circleEl) {
+        console.log('Timer elements not found in live studio');
+        return;
+    }
+    
+    // Update display
+    textEl.textContent = seconds;
+    
+    // Update progress circle - always use 30 as max for consistency
+    const offset = circumference - (seconds / 30) * circumference;
+    circleEl.style.strokeDashoffset = offset;
+    
+    // Change color based on time remaining
+    if (seconds <= 5) {
+        circleEl.style.stroke = 'var(--accent-red)';
+    } else if (seconds <= 10) {
+        circleEl.style.stroke = '#f59e0b';
+    } else {
+        circleEl.style.stroke = 'var(--accent-cyan)';
+    }
+    
+    // Stop local countdown timer since we're using server timer
     if (countdownTimer) {
         clearInterval(countdownTimer);
         countdownTimer = null;
