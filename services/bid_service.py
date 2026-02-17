@@ -38,6 +38,13 @@ class BidService:
         if not config.get("active", False):
             raise HTTPException(status_code=400, detail="Auction is not active")
         
+        # Check if timer is still running (prevent bids after timer expires)
+        if not manager.timer_running or manager.timer_seconds <= 0:
+            raise HTTPException(
+                status_code=400, 
+                detail="Auction time has expired. Please wait for admin to set next player."
+            )
+        
         # Get player
         player = db.players.find_one({"_id": pid})
         if not player:

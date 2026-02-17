@@ -818,10 +818,27 @@ function updateTeamAuctionTimer(seconds) {
             playTeamCountdownBeep(seconds);
             teamLastBeepSecond = seconds;
         }
+        
+        // Enable bid button when timer is running
+        const bidButton = document.querySelector('.bid-button');
+        if (bidButton) {
+            bidButton.disabled = false;
+        }
     } else {
+        // Timer expired - disable bidding
         timerCard.style.display = 'none';
         teamTimerMaxSeconds = 30;
         teamLastBeepSecond = -1;
+        
+        // Disable bid button when timer expires
+        const bidButton = document.querySelector('.bid-button');
+        if (bidButton) {
+            bidButton.disabled = true;
+            bidButton.textContent = 'Auction Closed';
+        }
+        
+        // Show message that auction is closing
+        showToast('Auction Closed', 'Time expired! Auction is being finalized...', 'warning');
     }
 }
 

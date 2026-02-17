@@ -521,8 +521,103 @@ async def set_live_player(
         }
     })
     
-    # Start auction timer (30 seconds)
-    await manager.start_timer(30)
+    # Define callback to auto-close auction when timer expires
+    async def auto_close_auction():
+        """Automatically close the auction when timer reaches 0."""
+        try:
+            # Get the current live player
+            live_player = db.players.find_one({"is_live": True})
+            if not live_player:
+                return
+            
+            # Determine final status
+            if live_player.get("final_bid") and live_player.get("final_bid") > 0:
+                final_status = "sold"
+                
+                # Update player as sold
+                db.players.update_one(
+                    {"_id": live_player["_id"]},
+                    {
+                        "$set": {
+                            "is_live": False,
+                            "status": "sold",
+                            "live_end_time": datetime.now(timezone.utc)
+                        }
+                    }
+                )
+                
+                # Get team name
+                team_name = None
+                if live_player.get("final_team"):
+                    team = db.teams.find_one({"_id": ObjectId(live_player.get("final_team"))})
+                    if team:
+                        team_name = team.get("name")
+                        
+                        # Update team's total spent and players count
+                        db.teams.update_one(
+                            {"_id": team["_id"]},
+                            {
+                                "$inc": {
+                                    "total_spent": live_player.get("final_bid", 0),
+                                    "players_count": 1
+                                },
+                                "$set": {
+                                    "remaining_budget": team.get("budget", 0)
+                                }
+                            }
+                        )
+                
+                # Broadcast player sold
+                await manager.broadcast({
+                    "type": "player_sold",
+                    "data": {
+                        "player_id": str(live_player["_id"]),
+                        "player_name": live_player.get("name"),
+                        "final_bid": live_player.get("final_bid"),
+                        "team_id": live_player.get("final_team"),
+                        "team_name": team_name,
+                        "auto_closed": True
+                    }
+                })
+            else:
+                # No bids - mark as unsold
+                db.players.update_one(
+                    {"_id": live_player["_id"]},
+                    {
+                        "$set": {
+                            "is_live": False,
+                            "status": "unsold",
+                            "live_end_time": datetime.now(timezone.utc)
+                        }
+                    }
+                )
+                
+                # Broadcast player unsold
+                await manager.broadcast({
+                    "type": "player_unsold",
+                    "data": {
+                        "player_id": str(live_player["_id"]),
+                        "player_name": live_player.get("name"),
+                        "auto_closed": True
+                    }
+                })
+            
+            # Clear current player from auction config
+            db.config.update_one(
+                {"key": "auction"},
+                {
+                    "$set": {
+                        "current_player_id": None,
+                        "current_player_name": None
+                    }
+                }
+            )
+            
+        except Exception as e:
+            print(f"Error in auto-close auction: {e}")
+    
+    # Start auction timer with auto-close callback
+    await manager.start_timer(30, on_complete_callback=auto_close_auction)
     
     return {
         "ok": True,
