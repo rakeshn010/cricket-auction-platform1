@@ -84,5 +84,16 @@ def is_cloudinary_configured():
     api_key = os.getenv("CLOUDINARY_API_KEY", "")
     api_secret = os.getenv("CLOUDINARY_API_SECRET", "")
     
-    return bool(cloud_name and api_key and api_secret and 
+    is_configured = bool(cloud_name and api_key and api_secret and 
                 cloud_name != "your_cloud_name")
+    
+    # Log configuration status
+    if is_configured:
+        print(f"✅ Cloudinary configured: {cloud_name}")
+    else:
+        print(f"⚠️ Cloudinary NOT configured")
+        print(f"   CLOUDINARY_CLOUD_NAME: {cloud_name if cloud_name else 'NOT SET'}")
+        print(f"   CLOUDINARY_API_KEY: {'SET' if api_key else 'NOT SET'}")
+        print(f"   CLOUDINARY_API_SECRET: {'SET' if api_secret else 'NOT SET'}")
+    
+    return is_configured

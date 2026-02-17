@@ -138,7 +138,9 @@ async def public_player_register(
         )
     
     image_path = None
-    if photo:
+    cloudinary_status = "not_attempted"
+    
+    if photo and photo.filename:
         # Validate and save image
         allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
         if photo.content_type not in allowed_types:
@@ -150,23 +152,22 @@ async def public_player_register(
         
         # Try Cloudinary first, fallback to local storage
         if is_cloudinary_configured():
-            # Upload to Cloudinary
+            print(f"📤 Uploading to Cloudinary: {photo.filename}")
+            cloudinary_status = "configured"
             result = upload_image(contents, photo.filename)
             if result.get("success"):
                 image_path = result.get("url")
+                cloudinary_status = "success"
+                print(f"✅ Cloudinary upload successful: {image_path}")
             else:
-                # Log error but continue without image
-                print(f"Cloudinary upload failed: {result.get('error')}")
+                cloudinary_status = f"failed: {result.get('error')}"
+                print(f"❌ Cloudinary upload failed: {result.get('error')}")
+                # Don't fallback to local - Railway filesystem is ephemeral
+                print(f"⚠️ Image not saved - Cloudinary required for Railway deployment")
         else:
-            # Fallback to local storage
-            file_ext = photo.filename.split(".")[-1]
-            unique_filename = f"player_{uuid.uuid4().hex}.{file_ext}"
-            file_path = UPLOAD_DIR / unique_filename
-            
-            with open(file_path, "wb") as f:
-                f.write(contents)
-            
-            image_path = f"/static/uploads/players/{unique_filename}"
+            cloudinary_status = "not_configured"
+            print(f"⚠️ Cloudinary not configured - image will not be saved")
+            print(f"   Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET in Railway")
     
     player_doc = {
         "name": name,
