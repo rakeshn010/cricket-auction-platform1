@@ -224,9 +224,12 @@ async function loadPendingPlayers() {
 let allAdminPlayers = [];
 
 async function loadPlayersAdmin() {
+    console.log("Loading players for admin...");
     const r = await api("/players?include_unapproved=true");
     const data = await r.json();
+    console.log("Players loaded:", data);
     allAdminPlayers = data.players || data;
+    console.log("Total players:", allAdminPlayers.length);
     
     // Update stats
     updatePlayerStats();
