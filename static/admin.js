@@ -516,7 +516,7 @@ async function loadPendingApprovals() {
         html += '</tr></thead><tbody>';
         
         data.players.forEach(player => {
-            const imgSrc = player.image_path || '/static/default-player.png';
+            const imgSrc = player.image_path || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%230a0a0a" width="200" height="200"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="80" fill="%23ffd700"%3E👤%3C/text%3E%3C/svg%3E';
             const regDate = player.created_at ? new Date(player.created_at).toLocaleDateString() : 'N/A';
             const basePrice = player.base_price ? `₹${player.base_price.toLocaleString()}` : 'Not Set';
             
