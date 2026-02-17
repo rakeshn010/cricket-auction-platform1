@@ -486,7 +486,16 @@
             
             e.target.reset();
           } else {
-            alert(data.detail || 'Registration failed. Please try again.');
+            // Handle error message properly
+            let errorMessage = 'Registration failed. Please try again.';
+            if (typeof data.detail === 'string') {
+              errorMessage = data.detail;
+            } else if (data.message) {
+              errorMessage = data.message;
+            } else if (data.detail && typeof data.detail === 'object') {
+              errorMessage = JSON.stringify(data.detail);
+            }
+            alert(errorMessage);
           }
         } catch (error) {
           console.error('Registration error:', error);
