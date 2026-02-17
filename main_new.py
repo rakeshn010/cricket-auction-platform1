@@ -123,12 +123,23 @@ app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     description="Production-ready Cricket Auction Platform with real-time bidding and enhanced security",
-    lifespan=lifespan,
-    redirect_slashes=False  # Disable automatic slash redirects to prevent HTTP redirects
+    lifespan=lifespan
 )
 
 
 # Add Security Middleware (order matters!)
+# 0. HTTPS redirect middleware (FIRST - to handle Railway proxy)
+@app.middleware("http")
+async def https_redirect_middleware(request: Request, call_next):
+    """Ensure redirects use HTTPS when behind a proxy."""
+    # Check if we're behind a proxy (Railway sets X-Forwarded-Proto)
+    forwarded_proto = request.headers.get("x-forwarded-proto")
+    if forwarded_proto == "https":
+        # Override the request URL scheme to HTTPS
+        request.scope["scheme"] = "https"
+    response = await call_next(request)
+    return response
+
 # 1. Strict Authentication (FIRST - before anything else)
 app.add_middleware(StrictAuthMiddleware)
 
