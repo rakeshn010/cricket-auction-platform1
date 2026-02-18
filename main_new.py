@@ -22,6 +22,12 @@ from core.security_middleware import (
 )
 from core.auth_middleware import StrictAuthMiddleware
 from core.rate_limiter import rate_limiter
+from core.performance_optimizer import (
+    PerformanceMiddleware,
+    ETaggerMiddleware,
+    ResponseCompressionOptimizer,
+    StaticAssetOptimizer
+)
 from routers import auth, players, teams, auction, admin, reports, viewer
 from database import db
 
@@ -131,7 +137,7 @@ app = FastAPI(
 )
 
 
-# Add Security Middleware (order matters!)
+# Add Middleware (order matters!)
 # 0. HTTPS redirect middleware (FIRST - to handle Railway proxy)
 @app.middleware("http")
 async def https_redirect_middleware(request: Request, call_next):
@@ -144,19 +150,22 @@ async def https_redirect_middleware(request: Request, call_next):
     response = await call_next(request)
     return response
 
-# 1. Strict Authentication (FIRST - before anything else)
+# 1. Performance tracking (FIRST - to measure total time)
+app.add_middleware(PerformanceMiddleware)
+
+# 2. Strict Authentication
 app.add_middleware(StrictAuthMiddleware)
 
-# 2. Security headers
+# 3. Security headers
 app.add_middleware(SecurityHeadersMiddleware)
 
-# 3. Request validation
+# 4. Request validation
 app.add_middleware(RequestValidationMiddleware)
 
-# 4. Audit logging
+# 5. Audit logging
 app.add_middleware(AuditLogMiddleware)
 
-# 5. IP whitelist (if enabled)
+# 6. IP whitelist (if enabled)
 if settings.ENABLE_IP_WHITELIST:
     app.add_middleware(
         IPWhitelistMiddleware,
@@ -165,7 +174,7 @@ if settings.ENABLE_IP_WHITELIST:
     )
     logger.info(f"IP whitelist enabled for admin endpoints: {settings.admin_ip_whitelist_list}")
 
-# 5. CORS Configuration
+# 7. CORS Configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
@@ -174,7 +183,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 6. Response compression (last)
+# 8. ETag for caching
+app.add_middleware(ETaggerMiddleware)
+
+# 9. Static asset optimization
+app.add_middleware(StaticAssetOptimizer)
+
+# 10. Response compression optimization
+app.add_middleware(ResponseCompressionOptimizer)
+
+# 11. Response compression (LAST)
 if settings.ENABLE_RESPONSE_COMPRESSION:
     app.add_middleware(GZipMiddleware, minimum_size=1000)
     logger.info("Response compression enabled")
