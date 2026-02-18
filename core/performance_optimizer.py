@@ -52,26 +52,6 @@ class PerformanceMiddleware(BaseHTTPMiddleware):
         # DNS prefetch for external resources
         if request.url.path in ["/", "/team/dashboard", "/admin", "/live"]:
             response.headers["X-DNS-Prefetch-Control"] = "on"
-            
-            # Preconnect to CDNs
-            link_headers = [
-                '<https://cdn.jsdelivr.net>; rel=preconnect',
-                '<https://cdnjs.cloudflare.com>; rel=preconnect',
-                '<https://fonts.googleapis.com>; rel=preconnect',
-            ]
-            response.headers["Link"] = ", ".join(link_headers)
-        
-        # Resource hints for critical assets
-        if request.url.path == "/team/dashboard":
-            preload_headers = [
-                '</static/team_dashboard_new.js>; rel=preload; as=script',
-                '</static/player-cards.css>; rel=preload; as=style',
-                '</static/realtime-optimizer.js>; rel=preload; as=script',
-            ]
-            if "Link" in response.headers:
-                response.headers["Link"] += ", " + ", ".join(preload_headers)
-            else:
-                response.headers["Link"] = ", ".join(preload_headers)
 
 
 class ETaggerMiddleware(BaseHTTPMiddleware):
