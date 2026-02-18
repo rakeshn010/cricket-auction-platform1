@@ -512,24 +512,25 @@ function createPlayerCard(player, isOwned) {
     }
     
     const price = isOwned 
-        ? `₹${(player.final_bid || 0).toLocaleString()}`
+        ? '₹' + (player.final_bid || 0).toLocaleString()
         : player.status === 'sold'
-        ? `₹${(player.final_bid || 0).toLocaleString()}`
-        : `Base: ₹${(player.base_price || 0).toLocaleString()}`;
+        ? '₹' + (player.final_bid || 0).toLocaleString()
+        : 'Base: ₹' + (player.base_price || 0).toLocaleString();
     
     const statusClass = player.status === 'sold' ? 'status-sold' : player.status === 'unsold' ? 'status-unsold' : 'status-available';
     const statusText = (player.status || 'available').toUpperCase();
     
-    return `
-        <div class="player-card">
-            <img src="${imageSrc}" class="player-card-img" alt="${player.name}" onerror="this.src='${defaultImg}'">
-            <div class="player-card-name">${player.name}</div>
-            <div class="player-card-info">${player.role || 'Player'} • ${player.category || 'N/A'}</div>
-            <div class="player-card-price">${price}</div>
-            ${player.team_name && !isOwned ? `<div class="player-card-info" style="color: #00d4ff;">Team: ${player.team_name}</div>` : ''}
-            <span class="status-badge ${statusClass}">${statusText}</span>
-        </div>
-    `;
+    const roleInfo = (player.role || 'Player') + ' &bull; ' + (player.category || 'N/A');
+    const teamInfo = player.team_name && !isOwned ? '<div class="player-card-info" style="color: #00d4ff;">Team: ' + player.team_name + '</div>' : '';
+    
+    return '<div class="player-card">' +
+            '<img src="' + imageSrc + '" class="player-card-img" alt="' + player.name + '" onerror="this.src=\'' + defaultImg + '\'">' +
+            '<div class="player-card-name">' + player.name + '</div>' +
+            '<div class="player-card-info">' + roleInfo + '</div>' +
+            '<div class="player-card-price">' + price + '</div>' +
+            teamInfo +
+            '<span class="status-badge ' + statusClass + '">' + statusText + '</span>' +
+        '</div>';
 }
 
 // Initialize charts
