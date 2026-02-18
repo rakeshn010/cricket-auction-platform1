@@ -259,6 +259,19 @@ async def health_check():
     }
 
 
+# Debug endpoint to check authentication
+@app.get("/debug/auth")
+async def debug_auth(request: Request):
+    """Debug endpoint to check authentication status."""
+    return {
+        "cookies": dict(request.cookies),
+        "is_authenticated": getattr(request.state, "is_authenticated", False),
+        "user_role": getattr(request.state, "user_role", None),
+        "user_email": getattr(request.state, "user_email", None),
+        "user_id": getattr(request.state, "user_id", None),
+    }
+
+
 # Service Worker endpoint (must be at root for proper scope)
 @app.get("/service-worker.js")
 async def serve_service_worker():
@@ -318,6 +331,19 @@ async def user_dashboard_page(request: Request):
 @app.get("/security/dashboard", response_class=HTMLResponse)
 async def security_dashboard_page(request: Request):
     """Serve the security monitoring dashboard (admin only)."""
+    # Debug: Check if user is authenticated
+    is_authenticated = getattr(request.state, "is_authenticated", False)
+    user_role = getattr(request.state, "user_role", None)
+    user_email = getattr(request.state, "user_email", None)
+    
+    logger.info(f"Security dashboard access: authenticated={is_authenticated}, role={user_role}, email={user_email}")
+    
+    # If not authenticated, this will be caught by auth middleware
+    # But let's add explicit check here
+    if not is_authenticated or user_role != "admin":
+        logger.warning(f"Unauthorized security dashboard access attempt: {user_email}")
+        return RedirectResponse(url="/?error=unauthorized", status_code=303)
+    
     return templates.TemplateResponse("security_dashboard.html", {"request": request})
 
 
