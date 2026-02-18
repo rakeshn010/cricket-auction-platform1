@@ -228,7 +228,8 @@ async def health_check():
         "status": "healthy",
         "app": settings.APP_NAME,
         "version": settings.APP_VERSION,
-        "environment": settings.ENVIRONMENT
+        "environment": settings.ENVIRONMENT,
+        "csp_updated": "2026-02-18-v2"  # Version marker
     }
 
 
