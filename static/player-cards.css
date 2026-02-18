@@ -141,13 +141,13 @@
 }
 
 .player-card-admin-img {
-    width: 80px;
-    height: 80px;
+    width: 120px;
+    height: 120px;
     border-radius: 50%;
     object-fit: cover;
     margin: 0 auto 0.8rem;
-    border: 2px solid #ffd700;
-    box-shadow: 0 3px 10px rgba(255, 215, 0, 0.3);
+    border: 3px solid #ffd700;
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
 }
 
 .player-card-admin-body {
