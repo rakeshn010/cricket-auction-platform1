@@ -2,7 +2,7 @@
 Teams router - Clean implementation.
 Handles team CRUD operations with proper MongoDB integration.
 """
-from fastapi import APIRouter, HTTPException, Depends, Form, status
+from fastapi import APIRouter, HTTPException, Depends, Form, File, UploadFile, status
 from typing import List, Optional
 from datetime import datetime, timezone
 from bson import ObjectId
