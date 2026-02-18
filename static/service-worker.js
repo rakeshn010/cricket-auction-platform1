@@ -72,7 +72,8 @@ self.addEventListener('fetch', (event) => {
       url.pathname.startsWith('/auth') ||
       url.pathname.startsWith('/auction') ||
       url.pathname.startsWith('/players') ||
-      url.pathname.startsWith('/teams')) {
+      url.pathname.startsWith('/teams') ||
+      url.pathname.startsWith('/security')) {
     event.respondWith(networkFirst(request));
     return;
   }

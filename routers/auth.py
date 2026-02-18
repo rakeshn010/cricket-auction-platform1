@@ -202,7 +202,7 @@ async def login(
         value=access_token,
         path="/",  # Available on all paths
         httponly=True,  # Prevents JavaScript access (XSS protection)
-        secure=False,  # Set to True in production with HTTPS
+        secure=True,  # Required for HTTPS (Railway uses HTTPS)
         samesite="lax",  # CSRF protection
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60  # 15 minutes
     )
@@ -212,7 +212,7 @@ async def login(
         value=refresh_token,
         path="/",  # Available on all paths
         httponly=True,
-        secure=False,
+        secure=True,  # Required for HTTPS
         samesite="lax",
         max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60  # 1 day
     )
@@ -321,7 +321,7 @@ async def team_login(
         value=access_token,
         path="/",  # Available on all paths
         httponly=True,
-        secure=False,
+        secure=True,  # Required for HTTPS
         samesite="lax",
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
     )
@@ -331,7 +331,7 @@ async def team_login(
         value=refresh_token,
         path="/",  # Available on all paths
         httponly=True,
-        secure=False,
+        secure=True,  # Required for HTTPS
         samesite="lax",
         max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
     )
