@@ -145,24 +145,28 @@ class LazyLoader {
    * Preload critical resources
    */
   preloadCriticalResources() {
-    const criticalResources = [
-      { href: '/static/player-cards.css', as: 'style' },
-      { href: '/static/realtime-optimizer.js', as: 'script' },
-      { href: 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css', as: 'style' }
-    ];
+    // Only preload resources that are actually used on the page
+    const currentPath = window.location.pathname;
+    
+    if (currentPath === '/team/dashboard') {
+      const criticalResources = [
+        { href: '/static/team_dashboard_new.js', as: 'script' },
+        { href: '/static/realtime-optimizer.js', as: 'script' }
+      ];
 
-    criticalResources.forEach(resource => {
-      const link = document.createElement('link');
-      link.rel = 'preload';
-      link.href = resource.href;
-      link.as = resource.as;
-      
-      if (resource.as === 'script') {
-        link.crossOrigin = 'anonymous';
-      }
-      
-      document.head.appendChild(link);
-    });
+      criticalResources.forEach(resource => {
+        const link = document.createElement('link');
+        link.rel = 'preload';
+        link.href = resource.href;
+        link.as = resource.as;
+        
+        if (resource.as === 'script') {
+          link.crossOrigin = 'anonymous';
+        }
+        
+        document.head.appendChild(link);
+      });
+    }
   }
 
   /**
@@ -171,7 +175,7 @@ class LazyLoader {
   async registerServiceWorker() {
     if ('serviceWorker' in navigator) {
       try {
-        const registration = await navigator.serviceWorker.register('/static/service-worker.js', {
+        const registration = await navigator.serviceWorker.register('/service-worker.js', {
           scope: '/'
         });
         

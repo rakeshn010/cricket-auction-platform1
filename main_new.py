@@ -232,6 +232,17 @@ async def health_check():
     }
 
 
+# Service Worker endpoint (must be at root for proper scope)
+@app.get("/service-worker.js")
+async def serve_service_worker():
+    """Serve the service worker with proper headers."""
+    from fastapi.responses import FileResponse
+    response = FileResponse("static/service-worker.js", media_type="application/javascript")
+    response.headers["Service-Worker-Allowed"] = "/"
+    response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
 # Root endpoint - Player Registration Page
 @app.get("/", response_class=HTMLResponse)
 async def serve_index(request: Request):

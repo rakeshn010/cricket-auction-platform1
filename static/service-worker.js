@@ -9,15 +9,13 @@ const RUNTIME_CACHE = 'cricket-auction-runtime';
 
 // Assets to cache immediately on install
 const PRECACHE_ASSETS = [
-  '/',
   '/static/player-cards.css',
   '/static/skit-pro.css',
   '/static/mobile-optimized.css',
-  '/static/features.css',
   '/static/realtime-optimizer.js',
   '/static/ux-enhancements.js',
-  '/static/cinematic-effects.js',
-  // Add more critical assets
+  '/static/lazy-loader.js',
+  // Add more critical assets as needed
 ];
 
 // Install event - cache critical assets
