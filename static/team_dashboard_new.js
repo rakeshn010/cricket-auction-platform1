@@ -521,10 +521,10 @@ function createPlayerCard(player, isOwned) {
     const statusText = (player.status || 'available').toUpperCase();
     
     const roleInfo = (player.role || 'Player') + ' &bull; ' + (player.category || 'N/A');
-    const teamInfo = player.team_name && !isOwned ? '<div class="player-card-info" style="color: #00d4ff;">Team: ' + player.team_name + '</div>' : '';
+    const teamInfo = player.team_name && !isOwned ? '<div class="player-card-info" style="color: #00d4ff;">Team: ' + player.name + '</div>' : '';
     
     return '<div class="player-card">' +
-            '<img src="' + imageSrc + '" class="player-card-img" alt="' + player.name + '" onerror="this.src=\'' + defaultImg + '\'">' +
+            '<img src="' + imageSrc + '" class="player-card-img" alt="' + player.name + '">' +
             '<div class="player-card-name">' + player.name + '</div>' +
             '<div class="player-card-info">' + roleInfo + '</div>' +
             '<div class="player-card-price">' + price + '</div>' +
