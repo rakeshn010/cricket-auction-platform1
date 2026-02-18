@@ -306,3 +306,56 @@ async def delete_team(
         logger.error(f"Error deleting team: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to delete team: {str(e)}")
 
+
+
+@router.post("/upload-logo/{team_id}")
+async def upload_team_logo(
+    team_id: str,
+    file: UploadFile = File(...),
+    current_user: dict = Depends(require_admin)
+):
+    """Upload team logo to Cloudinary."""
+    from fastapi import File, UploadFile
+    from core.cloudinary_config import upload_image, is_cloudinary_configured
+    
+    # Validate file type
+    allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/svg+xml"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid file type. Only JPEG, PNG, WebP, and SVG are allowed."
+        )
+    
+    # Validate file size (2MB max for logos)
+    contents = await file.read()
+    if len(contents) > 2 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large. Maximum 2MB.")
+    
+    try:
+        tid = ObjectId(team_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid team ID")
+    
+    team = db.teams.find_one({"_id": tid})
+    if not team:
+        raise HTTPException(status_code=404, detail="Team not found")
+    
+    logo_url = None
+    
+    if is_cloudinary_configured():
+        # Upload to Cloudinary
+        result = upload_image(contents, file.filename, folder="cricket_auction/team_logos")
+        if result.get("success"):
+            logo_url = result.get("url")
+        else:
+            raise HTTPException(status_code=500, detail=f"Cloudinary upload failed: {result.get('error')}")
+    else:
+        raise HTTPException(status_code=500, detail="Cloudinary not configured")
+    
+    # Update team with logo path
+    db.teams.update_one(
+        {"_id": tid},
+        {"$set": {"logo_path": logo_url, "updated_at": datetime.now(timezone.utc)}}
+    )
+    
+    return {"ok": True, "logo_path": logo_url}
