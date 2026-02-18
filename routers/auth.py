@@ -200,6 +200,7 @@ async def login(
     response.set_cookie(
         key="access_token",
         value=access_token,
+        path="/",  # Available on all paths
         httponly=True,  # Prevents JavaScript access (XSS protection)
         secure=False,  # Set to True in production with HTTPS
         samesite="lax",  # CSRF protection
@@ -209,6 +210,7 @@ async def login(
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
+        path="/",  # Available on all paths
         httponly=True,
         secure=False,
         samesite="lax",
@@ -317,6 +319,7 @@ async def team_login(
     response.set_cookie(
         key="access_token",
         value=access_token,
+        path="/",  # Available on all paths
         httponly=True,
         secure=False,
         samesite="lax",
@@ -326,6 +329,7 @@ async def team_login(
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
+        path="/",  # Available on all paths
         httponly=True,
         secure=False,
         samesite="lax",
