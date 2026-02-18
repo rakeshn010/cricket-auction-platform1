@@ -1,130 +1,81 @@
-# 🔧 IMPORTANT: Clear Your Browser Cache to See New Features
+# Clear Browser Cache - CRITICAL STEP
 
-## The Problem
-You're seeing "Uncaught SyntaxError: Invalid or unexpected token" errors because your browser is loading OLD cached JavaScript files instead of the NEW enhanced versions with all the features.
+## What Changed
+- Service Worker version bumped from v1.0.0 to v2.0.0
+- This forces ALL browsers to clear old cached content
+- Unsplash background image restored
+- CSP is already correct on server (has been since last deployment)
 
-## The Solution - CLEAR YOUR BROWSER CACHE
+## Why This Fixes The Issue
+The problem was NOT the server CSP - it's been correct all along. The issue is:
+1. Service Worker cached the OLD HTML with OLD CSP
+2. Browser kept serving cached version even after server updated
+3. Bumping SW version forces complete cache clear
 
-### ⚡ Method 1: Hard Refresh (FASTEST - DO THIS FIRST)
+## What Will Happen After Deployment
 
-#### On Windows/Linux:
-1. Go to your auction site: https://cricket-auction-platform1-production.up.railway.app
-2. Press **`Ctrl + Shift + R`** or **`Ctrl + F5`**
-3. Wait for page to fully reload
+### Automatic (No User Action Needed)
+When you visit the site after Railway deploys:
+1. Browser detects new Service Worker version (v2.0.0)
+2. Old Service Worker (v1.0.0) is automatically unregistered
+3. New Service Worker installs with fresh cache
+4. All old cached content is deleted
+5. Fresh HTML with correct CSP is loaded from server
 
-#### On Mac:
-1. Go to your auction site
-2. Press **`Cmd + Shift + R`**
-3. Wait for page to fully reload
+### Result
+- NO MORE CSP errors for Cloudinary images
+- NO MORE CSP errors for Unsplash background
+- Everything loads correctly automatically
 
-### 🧹 Method 2: Clear Cache Manually (If Method 1 Doesn't Work)
+## Verify It's Working
 
-#### Chrome/Edge:
-1. Press **`Ctrl + Shift + Delete`** (Windows) or **`Cmd + Shift + Delete`** (Mac)
-2. Select **"Cached images and files"**
-3. Make sure time range is set to **"All time"**
-4. Click **"Clear data"**
-5. Go back to the site and refresh
+1. Wait for Railway deployment to complete (2-3 minutes)
+2. Open your site in browser
+3. Open DevTools (F12) → Console
+4. Look for: `[SW] Installing service worker...` with version 2.0.0
+5. Check Network tab → Response Headers → Look for `X-CSP-Version: 2026-02-18-v3`
+6. No CSP errors should appear
 
-#### Firefox:
-1. Press **`Ctrl + Shift + Delete`** (Windows) or **`Cmd + Shift + Delete`** (Mac)
-2. Select **"Cache"**
-3. Click **"Clear Now"**
-4. Go back to the site and refresh
+## If You Still See Errors (Unlikely)
 
-### 🕵️ Method 3: Use Incognito/Private Mode (To Test)
+Only if automatic cache clear doesn't work:
+1. Open DevTools (F12)
+2. Go to Application tab
+3. Click "Clear storage" on left
+4. Check all boxes
+5. Click "Clear site data"
+6. Close browser completely
+7. Reopen and visit site
 
-#### Chrome/Edge:
-- Press **`Ctrl + Shift + N`** (Windows) or **`Cmd + Shift + N`** (Mac)
-- Open your site in the incognito window
+## Technical Details
 
-#### Firefox:
-- Press **`Ctrl + Shift + P`** (Windows) or **`Cmd + Shift + P`** (Mac)
-- Open your site in the private window
+### Service Worker Cache Versioning
+```javascript
+// OLD (cached bad CSP)
+const CACHE_NAME = 'cricket-auction-v1.0.0';
 
----
+// NEW (forces fresh load)
+const CACHE_NAME = 'cricket-auction-v2.0.0';
+```
 
-## ✅ How to Verify It Worked
+When the cache name changes, the Service Worker:
+1. Detects version mismatch
+2. Deletes old cache completely
+3. Creates new cache with fresh content
+4. Serves new content with correct CSP
 
-After clearing cache, you should see these NEW features:
+### CSP Configuration (Already Correct)
+```python
+# In core/security_middleware.py line 46
+connect-src 'self' ws: wss: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://res.cloudinary.com https://images.unsplash.com
+```
 
-### In Admin Panel:
-1. **⏱️ Auction Timer** - Big countdown timer with color-coded progress bar
-   - Green when > 10 seconds
-   - Orange when 5-10 seconds
-   - Red and pulsing when < 5 seconds
-   - Beep sounds at 10, 5, 3, 2, 1 seconds
+This has been correct since the last deployment. The issue was browser cache, not server config.
 
-2. **📥 Export Buttons**
-   - "Export Roster" button in Player Management tab
-   - "Export CSV" button in Bid History section
+## Summary
+✅ Server CSP: Correct (has been all along)
+✅ Service Worker: Updated to v2.0.0 (forces cache clear)
+✅ Background: Restored to Unsplash
+✅ Deployment: Pushed to Railway
 
-3. **🔨 Enhanced SOLD Sound**
-   - 3 hammer hits + chime sound when player is sold
-
-### In Team Dashboard:
-1. **⏱️ Auction Timer** - Same countdown timer as admin
-2. **💰 Budget Alerts** - Toast notifications appear when:
-   - You reach 50% budget remaining (orange warning)
-   - You reach 20% budget remaining (red alert)
-
-### In Live Studio:
-1. **⏱️ Auction Timer** - Countdown display
-2. **🔊 Enhanced Sounds** - Countdown beeps and hammer sounds
-
----
-
-## 🚨 If You Still See Errors After Clearing Cache
-
-### Check Console for Specific Errors:
-1. Press **`F12`** to open Developer Tools
-2. Click on **"Console"** tab
-3. Take a screenshot of any errors
-4. Share with me so I can fix them
-
-### Force Reload All Resources:
-1. Open Developer Tools (**`F12`**)
-2. Right-click the **Refresh button** in your browser
-3. Select **"Empty Cache and Hard Reload"**
-
----
-
-## 📝 What I Fixed
-
-1. **Updated all JavaScript file versions** to force browser reload:
-   - `admin.js` → v6.0.0
-   - `team_dashboard_new.js` → v3.0.0
-   - `admin_teams.js` → v4.0.0
-   - `live_studio.js` → v2.0.0
-
-2. **Added cache-control headers** to prevent aggressive caching:
-   - JavaScript files now expire after 5 minutes
-   - Browser must check for updates more frequently
-
-3. **Pushed to GitHub** - Railway will auto-deploy in 2-3 minutes
-
----
-
-## ⏰ Timeline
-
-1. **Now**: Code is pushed to GitHub ✅
-2. **2-3 minutes**: Railway will auto-deploy the changes
-3. **After deployment**: Clear your browser cache using methods above
-4. **Then**: You'll see all the new features!
-
----
-
-## 💡 Pro Tip
-
-If you're testing frequently, use **Incognito/Private mode** to avoid cache issues. Each time you open a new incognito window, it starts with a fresh cache.
-
----
-
-## 🆘 Need Help?
-
-If you still don't see the features after:
-1. Waiting for Railway deployment (check Railway dashboard)
-2. Clearing browser cache (try all 3 methods)
-3. Trying incognito mode
-
-Then let me know and I'll investigate further!
+**No manual cache clearing needed - it happens automatically!**

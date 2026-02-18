@@ -22,6 +22,10 @@ from core.security_middleware import (
 )
 from core.auth_middleware import StrictAuthMiddleware
 from core.rate_limiter import rate_limiter
+from core.integrated_security import IntegratedSecurityMiddleware, SecurityEventLogger
+from core.security_monitor import security_monitor
+from core.auto_blocker import auto_blocker
+from core.log_sanitizer import setup_sanitized_logging
 from core.performance_optimizer import (
     PerformanceMiddleware,
     ETaggerMiddleware,
@@ -47,6 +51,10 @@ async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
     logger.info(f"Environment: {settings.ENVIRONMENT}")
     
+    # Setup PII sanitization for logs
+    setup_sanitized_logging()
+    logger.info("✅ PII sanitization enabled")
+    
     # Start rate limiter cleanup
     if settings.ENABLE_RATE_LIMITING:
         rate_limiter.start_cleanup()
@@ -67,6 +75,17 @@ async def lifespan(app: FastAPI):
     
     asyncio.create_task(cleanup_sessions())
     logger.info("Session manager started")
+    
+    # Start security monitoring cleanup
+    async def cleanup_security():
+        while True:
+            await asyncio.sleep(3600)  # Every hour
+            security_monitor.cleanup_old_events(days=90)
+            auto_blocker.cleanup_expired_blocks()
+    
+    asyncio.create_task(cleanup_security())
+    logger.info("✅ Security monitoring started")
+    logger.info(f"✅ Auto-blocker initialized with {len(auto_blocker.blocked_ips)} blocked IPs")
     
     # Create indexes
     try:
@@ -153,19 +172,26 @@ async def https_redirect_middleware(request: Request, call_next):
 # 1. Performance tracking (FIRST - to measure total time)
 app.add_middleware(PerformanceMiddleware)
 
-# 2. Strict Authentication
+# 2. Integrated Security (IP blocking, threat detection)
+app.add_middleware(IntegratedSecurityMiddleware)
+logger.info("✅ Integrated security middleware enabled")
+
+# 3. Security event logging
+app.add_middleware(SecurityEventLogger)
+
+# 4. Strict Authentication
 app.add_middleware(StrictAuthMiddleware)
 
-# 3. Security headers
+# 5. Security headers
 app.add_middleware(SecurityHeadersMiddleware)
 
-# 4. Request validation
+# 6. Request validation
 app.add_middleware(RequestValidationMiddleware)
 
-# 5. Audit logging
+# 7. Audit logging
 app.add_middleware(AuditLogMiddleware)
 
-# 6. IP whitelist (if enabled)
+# 8. IP whitelist (if enabled)
 if settings.ENABLE_IP_WHITELIST:
     app.add_middleware(
         IPWhitelistMiddleware,
@@ -174,7 +200,7 @@ if settings.ENABLE_IP_WHITELIST:
     )
     logger.info(f"IP whitelist enabled for admin endpoints: {settings.admin_ip_whitelist_list}")
 
-# 7. CORS Configuration
+# 9. CORS Configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
@@ -183,16 +209,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 8. ETag for caching
+# 10. ETag for caching
 app.add_middleware(ETaggerMiddleware)
 
-# 9. Static asset optimization
+# 11. Static asset optimization
 app.add_middleware(StaticAssetOptimizer)
 
-# 10. Response compression optimization
+# 12. Response compression optimization
 app.add_middleware(ResponseCompressionOptimizer)
 
-# 11. Response compression (LAST)
+# 13. Response compression (LAST)
 if settings.ENABLE_RESPONSE_COMPRESSION:
     app.add_middleware(GZipMiddleware, minimum_size=1000)
     logger.info("Response compression enabled")
@@ -288,6 +314,13 @@ async def user_dashboard_page(request: Request):
     return templates.TemplateResponse("user_dashboard.html", {"request": request})
 
 
+# Security dashboard page (admin only)
+@app.get("/security/dashboard", response_class=HTMLResponse)
+async def security_dashboard_page(request: Request):
+    """Serve the security monitoring dashboard (admin only)."""
+    return templates.TemplateResponse("security_dashboard.html", {"request": request})
+
+
 # Include routers
 app.include_router(auth.router)
 app.include_router(players.router)
@@ -306,6 +339,10 @@ app.include_router(comparison.router)
 # Include monitoring router
 from core.monitoring import router as monitoring_router
 app.include_router(monitoring_router)
+
+# Include security dashboard router
+from routers.security_dashboard import router as security_router
+app.include_router(security_router)
 
 
 # Error handlers
