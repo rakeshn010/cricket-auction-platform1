@@ -1,11 +1,11 @@
 /**
  * Service Worker for Cricket Auction Platform
  * Provides offline capability and faster loading
- * Version: 1.0.0
+ * Version: 2.0.0 - Force cache clear for CSP update
  */
 
-const CACHE_NAME = 'cricket-auction-v1.0.0';
-const RUNTIME_CACHE = 'cricket-auction-runtime';
+const CACHE_NAME = 'cricket-auction-v2.0.0';
+const RUNTIME_CACHE = 'cricket-auction-runtime-v2';
 
 // Assets to cache immediately on install
 const PRECACHE_ASSETS = [
