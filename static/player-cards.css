@@ -100,8 +100,8 @@
 
 .players-grid-admin {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
     margin-top: 1.5rem;
 }
 
@@ -109,8 +109,8 @@
 .player-card-admin {
     background: linear-gradient(135deg, rgba(10, 10, 10, 0.95) 0%, rgba(20, 20, 30, 0.95) 100%);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 14px;
-    padding: 1.2rem;
+    border-radius: 12px;
+    padding: 1rem;
     text-align: center;
     transition: all 0.3s ease;
     position: relative;
@@ -131,9 +131,9 @@
 }
 
 .player-card-admin:hover {
-    transform: translateY(-5px);
+    transform: translateY(-3px);
     border-color: #ffd700;
-    box-shadow: 0 10px 30px rgba(255, 215, 0, 0.2);
+    box-shadow: 0 8px 20px rgba(255, 215, 0, 0.2);
 }
 
 .player-card-admin:hover::before {
@@ -141,13 +141,13 @@
 }
 
 .player-card-admin-img {
-    width: 120px;
-    height: 120px;
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
     object-fit: cover;
-    margin: 0 auto 1rem;
-    border: 3px solid #ffd700;
-    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+    margin: 0 auto 0.8rem;
+    border: 2px solid #ffd700;
+    box-shadow: 0 3px 10px rgba(255, 215, 0, 0.3);
 }
 
 .player-card-admin-body {
@@ -156,42 +156,53 @@
 }
 
 .player-card-admin-name {
-    font-size: 1.2rem;
+    font-size: 1rem;
     font-weight: 700;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
     color: #ffffff;
 }
 
 .player-card-admin-info {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     color: rgba(255, 255, 255, 0.7);
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
 }
 
 .player-card-admin-price {
-    font-size: 1.1rem;
+    font-size: 0.95rem;
     font-weight: 700;
     color: #ffd700;
-    margin: 0.8rem 0;
+    margin: 0.6rem 0;
 }
 
 .player-card-admin-actions {
     display: flex;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
 }
 
 .player-card-admin-actions .flex-1 {
     flex: 1;
 }
 
+.player-card-admin-actions input,
+.player-card-admin-actions select {
+    font-size: 0.85rem;
+    padding: 0.4rem;
+}
+
+.player-card-admin-actions button {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.6rem;
+}
+
 .status-badge-admin {
     position: absolute;
-    top: 10px;
-    right: 10px;
-    padding: 0.3rem 0.8rem;
-    border-radius: 15px;
-    font-size: 0.7rem;
+    top: 8px;
+    right: 8px;
+    padding: 0.25rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.65rem;
     font-weight: 700;
     text-transform: uppercase;
     z-index: 2;
