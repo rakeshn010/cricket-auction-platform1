@@ -503,23 +503,12 @@ function filterPlayers() {
 function createPlayerCard(player, isOwned) {
     const defaultImg = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="280" height="220"%3E%3Crect fill="%230a0a0a" width="280" height="220"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="80" fill="%23ffd700"%3E👤%3C/text%3E%3C/svg%3E';
     
-    // Handle image path - ensure it's correct or use default
+    // Handle image path - accept both Cloudinary URLs and local paths
     let imageSrc = defaultImg;
     if (player.image_path) {
-        // If path doesn't start with /static/uploads/players/, fix it
-        if (player.image_path.includes('/static/uploads/players/')) {
-            imageSrc = player.image_path;
-        } else if (player.image_path.includes('/static/uploads/')) {
-            // Old format - try to fix it
-            const filename = player.image_path.split('/').pop();
-            imageSrc = `/static/uploads/players/${filename}`;
-        } else {
+        if (player.image_path.startsWith('http') || player.image_path.includes('/static/uploads/players/')) {
             imageSrc = player.image_path;
         }
-    } else if (player.photo) {
-        imageSrc = player.photo;
-    } else if (player.image) {
-        imageSrc = player.image;
     }
     
     const price = isOwned 
@@ -528,22 +517,17 @@ function createPlayerCard(player, isOwned) {
         ? `₹${(player.final_bid || 0).toLocaleString()}`
         : `Base: ₹${(player.base_price || 0).toLocaleString()}`;
     
-    const statusClass = player.status === 'sold' ? 'status-sold' : 'status-available';
-    const statusText = player.status === 'sold' ? 'Sold' : 'Available';
+    const statusClass = player.status === 'sold' ? 'status-sold' : player.status === 'unsold' ? 'status-unsold' : 'status-available';
+    const statusText = (player.status || 'available').toUpperCase();
     
     return `
         <div class="player-card">
-            <span class="player-card-status ${statusClass}">${statusText}</span>
-            <img src="${imageSrc}" class="player-card-image" alt="${player.name}" onerror="this.src='${defaultImg}'">
-            <div class="player-card-body">
-                <div class="player-card-name">${player.name}</div>
-                <div class="player-card-meta">
-                    <span class="meta-badge role">${player.role || 'Player'}</span>
-                    ${player.category ? `<span class="meta-badge category">${player.category}</span>` : ''}
-                </div>
-                <div class="player-card-price">${price}</div>
-                ${player.team_name && !isOwned ? `<div style="color: #00d4ff; font-size: 14px; margin-top: 10px;">Team: ${player.team_name}</div>` : ''}
-            </div>
+            <img src="${imageSrc}" class="player-card-img" alt="${player.name}" onerror="this.src='${defaultImg}'">
+            <div class="player-card-name">${player.name}</div>
+            <div class="player-card-info">${player.role || 'Player'} • ${player.category || 'N/A'}</div>
+            <div class="player-card-price">${price}</div>
+            ${player.team_name && !isOwned ? `<div class="player-card-info" style="color: #00d4ff;">Team: ${player.team_name}</div>` : ''}
+            <span class="status-badge ${statusClass}">${statusText}</span>
         </div>
     `;
 }
