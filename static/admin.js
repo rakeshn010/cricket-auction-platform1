@@ -312,10 +312,13 @@ function renderAdminPlayersInTab(players, containerId) {
     const fragment = document.createDocumentFragment();
 
     players.forEach(p => {
-        // Handle image path - ensure it's correct or use default
+        // Handle image path - use Cloudinary URL or local path
         let imageSrc = defaultImg;
-        if (p.image_path && p.image_path.includes('/static/uploads/players/')) {
-            imageSrc = p.image_path;
+        if (p.image_path) {
+            // Accept both Cloudinary URLs and local paths
+            if (p.image_path.startsWith('http') || p.image_path.includes('/static/uploads/players/')) {
+                imageSrc = p.image_path;
+            }
         }
         
         const statusClass = `status-${p.status || 'available'}`;
