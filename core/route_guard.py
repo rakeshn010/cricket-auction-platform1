@@ -21,6 +21,7 @@ class RouteGuard:
         "/admin": ["admin"],
         "/live": ["admin", "team_member", "viewer"],
         "/team/dashboard": ["admin", "team_member"],
+        "/security/dashboard": ["admin"],
     }
     
     # Public routes (no authentication required)
