@@ -33,6 +33,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
         
         # Content Security Policy - Allow common CDNs, Cloudinary, and Unsplash
+        # Updated: 2026-02-18
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
@@ -42,6 +43,12 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "connect-src 'self' ws: wss: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://res.cloudinary.com https://images.unsplash.com; "
             "frame-ancestors 'none';"
         )
+        
+        # Prevent caching of HTML pages to ensure CSP updates are applied
+        if "text/html" in response.headers.get("content-type", ""):
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
         
         return response
 
