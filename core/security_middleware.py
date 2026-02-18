@@ -34,7 +34,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         
         # Content Security Policy - Allow common CDNs, Cloudinary, and Unsplash
         # Updated: 2026-02-18
-        response.headers["Content-Security-Policy"] = (
+        csp_policy = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
@@ -43,6 +43,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "connect-src 'self' ws: wss: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://res.cloudinary.com https://images.unsplash.com; "
             "frame-ancestors 'none';"
         )
+        response.headers["Content-Security-Policy"] = csp_policy
+        response.headers["X-CSP-Version"] = "2026-02-18-v3"  # Debug header
         
         # Prevent caching of HTML pages to ensure CSP updates are applied
         if "text/html" in response.headers.get("content-type", ""):
