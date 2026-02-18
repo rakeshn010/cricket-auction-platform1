@@ -401,6 +401,11 @@
         Logs & Export
       </button>
     </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="security-tab" data-bs-toggle="pill" data-bs-target="#security-tab-content" type="button" onclick="loadSecurityDashboard()">
+        🔒 Security
+      </button>
+    </li>
   </ul>
 
   <!-- Tab Content -->
@@ -974,6 +979,10 @@
 
     </div>
     <!-- END LOGS & EXPORT TAB -->
+
+    <!-- SECURITY TAB -->
+    {% include 'admin_security_tab.html' %}
+    <!-- END SECURITY TAB -->
 
   </div>
   <!-- END TAB CONTENT -->
