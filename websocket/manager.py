@@ -124,7 +124,7 @@ class ConnectionManager:
         """Send periodic heartbeat to detect dead connections."""
         while True:
             try:
-                await asyncio.sleep(30)  # Every 30 seconds
+                await asyncio.sleep(15)  # Every 15 seconds (faster detection)
                 
                 now = datetime.now(timezone.utc)
                 disconnected = []
