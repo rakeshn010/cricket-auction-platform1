@@ -32,14 +32,14 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
         
-        # Content Security Policy - Allow common CDNs and Cloudinary
+        # Content Security Policy - Allow common CDNs, Cloudinary, and Unsplash
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
-            "img-src 'self' data: https: https://res.cloudinary.com; "
+            "img-src 'self' data: https: https://res.cloudinary.com https://images.unsplash.com; "
             "font-src 'self' data: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
-            "connect-src 'self' ws: wss: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://res.cloudinary.com; "
+            "connect-src 'self' ws: wss: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://res.cloudinary.com https://images.unsplash.com; "
             "frame-ancestors 'none';"
         )
         
