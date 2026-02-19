@@ -5,18 +5,28 @@ Provides endpoints for security monitoring and management.
 from fastapi import APIRouter, Depends, HTTPException, Request
 from typing import List, Dict
 from datetime import datetime, timezone
+import logging
 
 from core.security_monitor import security_monitor
 from core.auto_blocker import auto_blocker
 from core.auth_middleware import StrictAuthMiddleware
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/security", tags=["security"])
 
 
 def require_admin(request: Request):
     """Require admin authentication."""
-    if not getattr(request.state, "is_admin", False):
-        raise HTTPException(403, "Admin access required")
+    is_admin = getattr(request.state, "is_admin", False)
+    user_email = getattr(request.state, "user_email", "unknown")
+    user_role = getattr(request.state, "user_role", "unknown")
+    
+    logger.info(f"Security API access: email={user_email}, role={user_role}, is_admin={is_admin}")
+    
+    if not is_admin:
+        logger.warning(f"Admin access denied for {user_email} (is_admin={is_admin})")
+        raise HTTPException(403, f"Admin access required. Your is_admin flag is: {is_admin}")
     return request.state
 
 
