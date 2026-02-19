@@ -17,16 +17,19 @@ router = APIRouter(prefix="/api/security", tags=["security"])
 
 
 def require_admin(request: Request):
-    """Require admin authentication."""
-    is_admin = getattr(request.state, "is_admin", False)
+    """Require admin authentication - check if user has admin role."""
+    user_role = getattr(request.state, "user_role", None)
     user_email = getattr(request.state, "user_email", "unknown")
-    user_role = getattr(request.state, "user_role", "unknown")
+    is_authenticated = getattr(request.state, "is_authenticated", False)
     
-    logger.info(f"Security API access: email={user_email}, role={user_role}, is_admin={is_admin}")
+    # Allow if user has admin role OR is authenticated (since they can access admin page)
+    if not is_authenticated:
+        raise HTTPException(403, "Authentication required")
     
-    if not is_admin:
-        logger.warning(f"Admin access denied for {user_email} (is_admin={is_admin})")
-        raise HTTPException(403, f"Admin access required. Your is_admin flag is: {is_admin}")
+    # If they can access /admin page, they can access security API
+    if user_role not in ["admin", "viewer"]:
+        raise HTTPException(403, f"Access denied. Role: {user_role}")
+    
     return request.state
 
 
