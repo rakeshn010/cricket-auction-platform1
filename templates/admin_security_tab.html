@@ -75,11 +75,29 @@
 // Load security dashboard data
 async function loadSecurityDashboard() {
   try {
-    const token = getCookie('access_token');
+    // Get token from cookie - try multiple methods
+    let token = getCookie('access_token');
+    
+    // If getCookie doesn't work, try direct cookie access
+    if (!token) {
+      const cookies = document.cookie.split(';');
+      for (let cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'access_token') {
+          token = value;
+          break;
+        }
+      }
+    }
+    
     if (!token) {
       console.error('No access token found');
+      document.getElementById('security-loading').innerHTML = 
+        '<div class="alert alert-danger">Authentication error. Please refresh the page and try again.</div>';
       return;
     }
+    
+    console.log('Token found, loading security data...');
     
     const headers = {
       'Authorization': `Bearer ${token}`
@@ -245,5 +263,11 @@ function getCookie(name) {
   const value = `; ${document.cookie}`;
   const parts = value.split(`; ${name}=`);
   if (parts.length === 2) return parts.pop().split(';').shift();
+  return null;
+}
+
+// Also try window.getCookie if it exists
+if (typeof window.getCookie === 'undefined') {
+  window.getCookie = getCookie;
 }
 </script>
