@@ -75,48 +75,39 @@
 // Load security dashboard data
 async function loadSecurityDashboard() {
   try {
-    // Get token from cookie - try multiple methods
-    let token = getCookie('access_token');
-    
-    // If getCookie doesn't work, try direct cookie access
-    if (!token) {
-      const cookies = document.cookie.split(';');
-      for (let cookie of cookies) {
-        const [name, value] = cookie.trim().split('=');
-        if (name === 'access_token') {
-          token = value;
-          break;
-        }
-      }
-    }
-    
-    if (!token) {
-      console.error('No access token found');
-      document.getElementById('security-loading').innerHTML = 
-        '<div class="alert alert-danger">Authentication error. Please refresh the page and try again.</div>';
-      return;
-    }
-    
-    console.log('Token found, loading security data...');
-    
-    const headers = {
-      'Authorization': `Bearer ${token}`
-    };
+    console.log('Loading security data...');
     
     // Show loading
     document.getElementById('security-loading').style.display = 'block';
     document.getElementById('security-content').style.display = 'none';
     
+    // Fetch with credentials (cookies sent automatically)
+    const fetchOptions = {
+      credentials: 'include',  // Send cookies automatically
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    };
+    
     // Load stats
-    const statsRes = await fetch('/api/security/stats', { headers });
+    const statsRes = await fetch('/api/security/stats', fetchOptions);
+    if (!statsRes.ok) {
+      throw new Error(`Stats request failed: ${statsRes.status}`);
+    }
     const stats = await statsRes.json();
     
     // Load blocked IPs
-    const blockedRes = await fetch('/api/security/blocked-ips', { headers });
+    const blockedRes = await fetch('/api/security/blocked-ips', fetchOptions);
+    if (!blockedRes.ok) {
+      throw new Error(`Blocked IPs request failed: ${blockedRes.status}`);
+    }
     const blocked = await blockedRes.json();
     
     // Load events
-    const eventsRes = await fetch('/api/security/events?limit=20', { headers });
+    const eventsRes = await fetch('/api/security/events?limit=20', fetchOptions);
+    if (!eventsRes.ok) {
+      throw new Error(`Events request failed: ${eventsRes.status}`);
+    }
     const events = await eventsRes.json();
     
     // Render stats
@@ -237,11 +228,10 @@ async function unblockIPAddress(ip) {
   if (!confirm(`Unblock IP ${ip}?`)) return;
   
   try {
-    const token = getCookie('access_token');
     const res = await fetch('/api/security/unblock-ip', {
       method: 'POST',
+      credentials: 'include',  // Send cookies automatically
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ ip })
@@ -251,7 +241,8 @@ async function unblockIPAddress(ip) {
       alert(`IP ${ip} unblocked successfully`);
       loadSecurityDashboard();
     } else {
-      alert('Failed to unblock IP');
+      const error = await res.json();
+      alert(`Failed to unblock IP: ${error.detail || 'Unknown error'}`);
     }
   } catch (error) {
     console.error('Error unblocking IP:', error);
