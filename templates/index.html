@@ -176,12 +176,44 @@
       .login-card { padding: 2rem 1.5rem; }
       .college-logo { width: 100px; height: 100px; }
     }
+    
+    /* Rules Button */
+    .rules-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #ffd700, #ffa500);
+      color: #000;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 25px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+    
+    .rules-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
+    }
+    
+    .rules-btn i {
+      margin-right: 8px;
+    }
   </style>
 </head>
 <body>
 
   <!-- Hero Section -->
   <div class="hero-section">
+    <!-- Rules Button (Top Right) -->
+    <button class="rules-btn" onclick="openRulesModal()">
+      <i class="fas fa-book"></i> Rules
+    </button>
+    
     <div class="hero-content">
       <!-- College Logo -->
       <img src="/static/skit-logo.jpg" alt="SKIT College Logo" class="college-logo" />
@@ -396,10 +428,146 @@
     </div>
   </div>
 
+  <!-- Rules Modal -->
+  <div class="modal fade" id="rulesModal" tabindex="-1" aria-labelledby="rulesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header" style="background: linear-gradient(135deg, #ffd700, #ffa500); color: #000;">
+          <h5 class="modal-title" id="rulesModalLabel">
+            <i class="fas fa-book me-2"></i>SKIT Premier League - Auction Rules
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+          
+          <div class="mb-4">
+            <h6 style="color: #ffd700; font-weight: 700;">
+              <i class="fas fa-info-circle me-2"></i>How the Auction Works
+            </h6>
+            <p style="color: #cbd5e1; line-height: 1.8;">
+              SKIT Premier League is a live cricket auction platform where teams bid for players in real-time. 
+              The auction is managed by admins and teams compete to build the best squad within their budget.
+            </p>
+          </div>
+
+          <div class="mb-4">
+            <h6 style="color: #ffd700; font-weight: 700;">
+              <i class="fas fa-user-plus me-2"></i>1. Player Registration
+            </h6>
+            <ul style="color: #cbd5e1; line-height: 1.8;">
+              <li>Users can register on the platform and create their profile</li>
+              <li>After registration, users can submit their player profile with details like name, role, category, and base price</li>
+              <li>Players can upload their photo and provide cricket statistics</li>
+              <li>Admin reviews and approves player registrations before they enter the auction pool</li>
+            </ul>
+          </div>
+
+          <div class="mb-4">
+            <h6 style="color: #ffd700; font-weight: 700;">
+              <i class="fas fa-users me-2"></i>2. Team Registration
+            </h6>
+            <ul style="color: #cbd5e1; line-height: 1.8;">
+              <li>Teams are created by the admin with a username and password</li>
+              <li>Each team receives a budget (purse) to spend on players</li>
+              <li>Teams must maintain minimum squad requirements (e.g., minimum players per category)</li>
+              <li>Teams login using their credentials to participate in bidding</li>
+            </ul>
+          </div>
+
+          <div class="mb-4">
+            <h6 style="color: #ffd700; font-weight: 700;">
+              <i class="fas fa-gavel me-2"></i>3. Live Auction Process
+            </h6>
+            <ul style="color: #cbd5e1; line-height: 1.8;">
+              <li><strong>Admin Control:</strong> Admin starts the auction and brings players one by one</li>
+              <li><strong>Player Display:</strong> Current player's details are shown to all teams in real-time</li>
+              <li><strong>Bidding:</strong> Teams place bids higher than the current bid amount</li>
+              <li><strong>Timer:</strong> Each player has a countdown timer (e.g., 30 seconds)</li>
+              <li><strong>Winning:</strong> When timer expires, the highest bidder wins the player</li>
+              <li><strong>Budget Update:</strong> Winning team's purse is reduced by the bid amount</li>
+              <li><strong>Next Player:</strong> Admin moves to the next player and the process repeats</li>
+            </ul>
+          </div>
+
+          <div class="mb-4">
+            <h6 style="color: #ffd700; font-weight: 700;">
+              <i class="fas fa-layer-group me-2"></i>4. Player Categories
+            </h6>
+            <ul style="color: #cbd5e1; line-height: 1.8;">
+              <li><strong>Platinum:</strong> Premium players with highest base price</li>
+              <li><strong>Gold:</strong> High-value players</li>
+              <li><strong>Silver:</strong> Mid-tier players</li>
+              <li><strong>Bronze:</strong> Entry-level players</li>
+              <li>Each category has different base prices set by admin</li>
+            </ul>
+          </div>
+
+          <div class="mb-4">
+            <h6 style="color: #ffd700; font-weight: 700;">
+              <i class="fas fa-user-shield me-2"></i>5. Admin Controls
+            </h6>
+            <ul style="color: #cbd5e1; line-height: 1.8;">
+              <li>Start/pause/resume auction</li>
+              <li>Approve or reject player registrations</li>
+              <li>Create and manage teams</li>
+              <li>Set auction timer and base prices</li>
+              <li>Monitor live bidding and resolve disputes</li>
+              <li>View analytics and auction statistics</li>
+              <li>Manage player categories and roles</li>
+            </ul>
+          </div>
+
+          <div class="mb-4">
+            <h6 style="color: #ffd700; font-weight: 700;">
+              <i class="fas fa-chart-line me-2"></i>6. Team Dashboard Features
+            </h6>
+            <ul style="color: #cbd5e1; line-height: 1.8;">
+              <li><strong>Live Bidding:</strong> Place bids on current player</li>
+              <li><strong>My Squad:</strong> View purchased players and remaining budget</li>
+              <li><strong>Wishlist:</strong> Mark favorite players before auction</li>
+              <li><strong>Comparison:</strong> Compare your team with other teams</li>
+              <li><strong>Live Chat:</strong> Communicate with other teams during auction</li>
+              <li><strong>Real-time Updates:</strong> Instant notifications via WebSocket</li>
+            </ul>
+          </div>
+
+          <div class="mb-4">
+            <h6 style="color: #ffd700; font-weight: 700;">
+              <i class="fas fa-trophy me-2"></i>7. Winning Strategy
+            </h6>
+            <ul style="color: #cbd5e1; line-height: 1.8;">
+              <li>Plan your budget wisely across all categories</li>
+              <li>Use wishlist to track target players</li>
+              <li>Monitor other teams' spending and remaining purse</li>
+              <li>Balance between star players and squad depth</li>
+              <li>Act quickly when timer is running out</li>
+              <li>Save budget for key players in your preferred categories</li>
+            </ul>
+          </div>
+
+          <div class="alert alert-warning" style="background: rgba(255, 215, 0, 0.1); border: 1px solid #ffd700; color: #ffd700;">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Important:</strong> All bids are final. Once you win a player, the amount is deducted from your purse and cannot be reversed.
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/static/cinematic-effects.js"></script>
   
   <script>
+    // Function to open Rules modal (global scope for onclick)
+    function openRulesModal() {
+      const modal = new bootstrap.Modal(document.getElementById('rulesModal'));
+      modal.show();
+    }
+
     // Wait for DOM to be fully loaded
     document.addEventListener('DOMContentLoaded', function() {
       
