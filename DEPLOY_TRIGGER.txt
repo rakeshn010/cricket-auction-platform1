@@ -1,2 +1,0 @@
-Deployment trigger - 2026-02-21 19:50
-Enterprise features should be active
