@@ -3,7 +3,6 @@ Health Check & Observability Dashboard
 Comprehensive system health monitoring
 """
 import logging
-import psutil
 import platform
 from datetime import datetime
 from typing import Dict, Any
@@ -54,56 +53,72 @@ async def health_check():
 async def system_metrics():
     """Get system metrics"""
     try:
-        # CPU metrics
-        cpu_percent = psutil.cpu_percent(interval=1)
-        cpu_count = psutil.cpu_count()
-        
-        # Memory metrics
-        memory = psutil.virtual_memory()
-        
-        # Disk metrics
-        disk = psutil.disk_usage('/')
-        
-        # Network metrics (if available)
+        # Try to import psutil, but don't fail if unavailable
         try:
-            network = psutil.net_io_counters()
-            network_stats = {
-                "bytes_sent": network.bytes_sent,
-                "bytes_recv": network.bytes_recv,
-                "packets_sent": network.packets_sent,
-                "packets_recv": network.packets_recv
+            import psutil
+            
+            # CPU metrics
+            cpu_percent = psutil.cpu_percent(interval=1)
+            cpu_count = psutil.cpu_count()
+            
+            # Memory metrics
+            memory = psutil.virtual_memory()
+            
+            # Disk metrics
+            disk = psutil.disk_usage('/')
+            
+            # Network metrics (if available)
+            try:
+                network = psutil.net_io_counters()
+                network_stats = {
+                    "bytes_sent": network.bytes_sent,
+                    "bytes_recv": network.bytes_recv,
+                    "packets_sent": network.packets_sent,
+                    "packets_recv": network.packets_recv
+                }
+            except:
+                network_stats = {}
+            
+            return {
+                "timestamp": datetime.utcnow().isoformat(),
+                "system": {
+                    "platform": platform.system(),
+                    "platform_release": platform.release(),
+                    "platform_version": platform.version(),
+                    "architecture": platform.machine(),
+                    "processor": platform.processor()
+                },
+                "cpu": {
+                    "percent": cpu_percent,
+                    "count": cpu_count
+                },
+                "memory": {
+                    "total": memory.total,
+                    "available": memory.available,
+                    "percent": memory.percent,
+                    "used": memory.used,
+                    "free": memory.free
+                },
+                "disk": {
+                    "total": disk.total,
+                    "used": disk.used,
+                    "free": disk.free,
+                    "percent": disk.percent
+                },
+                "network": network_stats
             }
-        except:
-            network_stats = {}
         
-        return {
-            "timestamp": datetime.utcnow().isoformat(),
-            "system": {
-                "platform": platform.system(),
-                "platform_release": platform.release(),
-                "platform_version": platform.version(),
-                "architecture": platform.machine(),
-                "processor": platform.processor()
-            },
-            "cpu": {
-                "percent": cpu_percent,
-                "count": cpu_count
-            },
-            "memory": {
-                "total": memory.total,
-                "available": memory.available,
-                "percent": memory.percent,
-                "used": memory.used,
-                "free": memory.free
-            },
-            "disk": {
-                "total": disk.total,
-                "used": disk.used,
-                "free": disk.free,
-                "percent": disk.percent
-            },
-            "network": network_stats
-        }
+        except ImportError:
+            # psutil not available, return basic info
+            return {
+                "timestamp": datetime.utcnow().isoformat(),
+                "system": {
+                    "platform": platform.system(),
+                    "platform_release": platform.release(),
+                    "architecture": platform.machine()
+                },
+                "message": "psutil not available - limited metrics"
+            }
     
     except Exception as e:
         logger.error(f"Failed to get system metrics: {e}")
